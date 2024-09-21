@@ -59,7 +59,11 @@ void CheckHelp (char* argv[]) {
 
 
 void CheckOpcode (char* argv[]) {
-  
+  int user_opcode(std::stoi(argv[3]));
+  if (user_opcode < 1 || user_opcode > 5) {
+    ErrorMesagge(argv);
+  }
+  return;
 }
 
 

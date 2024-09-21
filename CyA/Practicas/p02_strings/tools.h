@@ -26,6 +26,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <set>
+#include <cstdlib>
+#include "mystring.h"
+#include "language.h"
+#include "alphabet.h"
 
  void Usage(int argc, char* argv[]);
  void ErrorMesagge(char* argv[]);
