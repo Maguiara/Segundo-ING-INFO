@@ -27,16 +27,16 @@
 #include <fstream>
 #include <string>
 #include <set>
+#include <vector>
 #include <cstdlib>
-#include "mystring.h"
-#include "language.h"
-#include "alphabet.h"
+
 
  void Usage(int argc, char* argv[]);
  void ErrorMesagge(char* argv[]);
  void CheckFiles(char* argv[]);
  void CheckHelp( char* argv[]);
  void CheckOpcode(char* argv[]);
+ void Operations(std::ifstream& input_file, std::ofstream& output_file, const int opcode);
 
 
 

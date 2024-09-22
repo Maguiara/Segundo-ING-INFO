@@ -15,11 +15,14 @@
  // 20/09/2024- Creacion de las clases "cadena", "lenguaje", y "alfabeto" con la definicion de sus metodos privados
 
 #include "tools.h" 
+
+#ifndef MYSTRING_H
+#define MYSTRING_H
 class MyString {
  public:
   //Constructores 
   MyString() = default;
-  MyString(const std::string& user_string) : my_string_{user_string}, size_{user_string.length()} {}
+  MyString(const std::string& user_string);
   //Getters
   std::string my_string() const { return my_string_; }
   int size() const { return size_; }
@@ -33,3 +36,4 @@ class MyString {
 };
 
 
+#endif

@@ -13,11 +13,19 @@
  // 19/09/2024- Creación (primera versión) del código
  // 20/09/2024- Creacion de las clases "cadena", "lenguaje", y "alfabeto" con la definicion de sus metodos privados
 
+ #include "mystring.h"
  #include "tools.h" 
 
+
+ MyString::MyString(const std::string& user_string) {
+  my_string_ = user_string;
+  (user_string == "&") ? size_ = 0 : size_ = user_string.length(); 
+ }
+
+
 void MyString::Invert() {
-  for (int i{0}; i <= size()/2; i++) {
-    std::swap(my_string_[i], my_string_[(my_string_.length() - 1) - i]);
+  for (int i{0}; i < my_string_.length() / 2; i++) {
+    std::swap(my_string_[i], my_string_[my_string_.length() - 1 - i]);
   }
 }
 

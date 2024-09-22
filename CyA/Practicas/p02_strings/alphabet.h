@@ -15,12 +15,16 @@
 
 #include "tools.h"
 
+#ifndef ALPHABET_H
+#define ALPHABET_H
 class Alphabet {
  public:
   Alphabet() = default;
-  Alphabet(const std::string& user_alphabet) {}
-  friend std::istream& operator>>(std::istream in, Alphabet& user_alphabet);
-  friend std::ostream& operator<<(std::ostream out, const Alphabet& user_alphabet);
+  Alphabet(const std::string& user_alphabet);
+  friend std::istream& operator>>(std::istream& in, Alphabet& user_alphabet);
+  friend std::ostream& operator<<(std::ostream& out, const Alphabet& user_alphabet);
  private:
 	std::set<char> my_alphabet_;
 };
+
+#endif

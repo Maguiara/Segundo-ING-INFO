@@ -13,13 +13,18 @@
  // Historial de revisiones
  // 17/09/2024- Creación (primera versión) del código
 #include "tools.h"
+#include "mystring.h"
 
+#ifndef LANGUAGE_H
+#define LANGUAGE_H
 class Language {
  public:
-	void Prefix(MyString user_string);
-	void Sufix(MyString user_string);
-	friend std::istream operator>>(std::istream in, Language& user_language);
-	friend std::ostream operator<<(std::ostream out, const Language& user_language);
+	void Prefix(MyString& user_string);
+	void Sufix(MyString& user_string);
+	friend std::istream& operator>>(std::istream& in, Language& user_language);
+	friend std::ostream& operator<<(std::ostream& out, const Language& user_language);
  private:
-  std::set <MyString> my_language_;
+  std::vector<std::string> my_language_;
 };
+
+#endif

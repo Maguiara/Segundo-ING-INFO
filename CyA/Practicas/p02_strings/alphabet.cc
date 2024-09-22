@@ -3,6 +3,7 @@
  
  
 #include "tools.h" 
+#include "alphabet.h"
 
 
 //Constructor parametrizado de la clase alphabet
@@ -24,3 +25,14 @@ std::ostream& operator<<(std::ostream& out, const Alphabet& user_alphabet) {
   out << "}";
   return out;
 }
+
+std::istream& operator>>(std::istream& in, Alphabet& user_alphabet) {
+  std::string user_input;
+  in >> user_input; // Leemos el alfabeto como una string 
+  user_alphabet.my_alphabet_.clear(); // Nos aseguramos de que el SET esta vacio
+   for (char c : user_input) {
+    user_alphabet.my_alphabet_.insert(c);
+  }
+  return in;
+}
+

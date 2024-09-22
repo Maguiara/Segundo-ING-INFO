@@ -16,6 +16,10 @@
 
 
 int main (int argc, char* argv[]) {
-    Usage(argc, argv);
-
+  Usage(argc, argv);
+  std::ifstream input_file{argv[1]}; 
+  std::ofstream output_file{argv[2]};
+  int opcode{std::stoi(argv[3])};
+  Operations(input_file, output_file, opcode);
+  
 } 
