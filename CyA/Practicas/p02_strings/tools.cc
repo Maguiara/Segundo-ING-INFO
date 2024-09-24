@@ -77,10 +77,10 @@ void checkHelp (char* argv[]) {
     "          en el fichero de entrada\n " <<
     "   1. Alfabeto: Muestra en el fichero de salida asociado el alfabeto al que esa asociado una cadena del fichero de entrada\n " <<
     "   2. Longitud: Muestra en el fichero de salida asociado la longitud de las cadenas del fichero de entrada\n " <<
-    "   3. Inversa: Muestra en el fichero de salida la cadena inversa asociada a cada cadena del fichero de entrada\n " <<
+    "   3. Inversa:  Muestra en el fichero de salida la cadena inversa asociada a cada cadena del fichero de entrada\n " <<
     "   4. Prefijos: Muestra en el fichero de salida todos los prefijos asociados a cada cadena del fichero de entrada\n " <<
-    "   5. Sufijos: Muestra en el fichero de salida todos los sujifos asociados a cada acadena del fichero de entrada\n " << std::endl;
-    exit(-1);
+    "   5. Sufijos:  Muestra en el fichero de salida todos los sujifos asociados a cada acadena del fichero de entrada\n " << std::endl;
+    exit(0);
   }
   errorMessage(argv);
 }
@@ -108,8 +108,8 @@ void checkOpcode (char* argv[]) {
  * Esta función imprime un mensaje de uso correcto del programa y luego
  * finaliza la ejecución con un código de error.
  *
- * @param argv[] Array de cadenas de caracteres que contiene los argumentos
- *               pasados al programa desde la línea de comandos.
+ * @param argv Array  que contiene los argumentos pasados al programa desde la línea de comandos.
+ *             argv[0] debera contener el ejecutable del programa  
  */
 void errorMessage(char * argv[]) {
   std::cout << "Modo de empleo del programa P02-strings: " << argv[0] << " filein.txt fileout.txt opcode\n" << 
@@ -118,20 +118,19 @@ void errorMessage(char * argv[]) {
 }
 
 /**
- * @brief Realiza diversas operaciones en función del código de operación proporcionado.
+ * @brief Realiza operaciones según el opcode.
  *
- * Esta función lee cadenas y alfabetos desde un archivo de entrada y realiza una operación
- * específica basada en el código de operación (opcode) proporcionado. Los resultados de 
- * las operaciones se escriben en un archivo de salida.
+ * Lee cadenas y alfabetos del archivo de entrada y realiza una operación
+ * basada en el opcode. Escribe los resultados en el archivo de salida.
  *
- * @param input_file Archivo de entrada desde el cual se leen las cadenas y alfabetos.
- * @param output_file Archivo de salida donde se escriben los resultados de las operaciones.
- * @param opcode Código de operación que determina la operación a realizar:
- *               - 1: Escribe el alfabeto de cada cadena en el archivo de salida.
- *               - 2: Escribe el tamaño de cada cadena en el archivo de salida.
- *               - 3: Invierte cada cadena y la escribe en el archivo de salida.
- *               - 4: Genera y escribe los prefijos de cada cadena en el archivo de salida.
- *               - 5: Genera y escribe los sufijos de cada cadena en el archivo de salida.
+ * @param input_file Archivo de entrada.
+ * @param output_file Archivo de salida.
+ * @param opcode Código de operación:
+ *               - 1: Escribe el alfabeto.
+ *               - 2: Escribe el tamaño de la cadena.
+ *               - 3: Invierte la cadena.
+ *               - 4: Escribe los prefijos.
+ *               - 5: Escribe los sufijos.
  */
 void operations(std::ifstream& input_file, std::ofstream& output_file, const int opcode) {
   MyString user_string;

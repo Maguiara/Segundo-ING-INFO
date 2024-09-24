@@ -22,11 +22,7 @@
 
 /**
  * @brief Constructor de la clase Alphabet.
- *
- * Este constructor inicializa un objeto Alphabet utilizando un alfabeto proporcionado por el usuario.
- * Cada carácter del alfabeto del usuario se inserta en el conjunto `my_alphabet_`.
- *
- * @param user_alphabet Una cadena de simbolos que representa el alfabeto proporcionado por el usuario.
+ * @param user_alphabet Cadena de símbolos del alfabeto.
  */
 Alphabet::Alphabet(const std::string& user_alphabet) {
   for (char c : user_alphabet) {
@@ -36,14 +32,9 @@ Alphabet::Alphabet(const std::string& user_alphabet) {
 
 /**
  * @brief Sobrecarga del operador de inserción para la clase Alphabet.
- *
- * Esta función permite imprimir un objeto de la clase Alphabet en un flujo de salida.
- * El alfabeto se imprime en formato de conjunto, es decir, los elementos están 
- * delimitados por llaves y separados por comas.
- *
- * @param out Flujo de salida donde se imprimirá el alfabeto.
- * @param user_alphabet Objeto de la clase Alphabet que se desea imprimir.
- * @return Referencia al flujo de salida modificado.
+ * @param out Flujo de salida.
+ * @param user_alphabet Objeto Alphabet.
+ * @return Referencia al flujo de salida.
  */
 std::ostream& operator<<(std::ostream& out, const Alphabet& user_alphabet) {
   out << "{"; 
@@ -59,14 +50,9 @@ std::ostream& operator<<(std::ostream& out, const Alphabet& user_alphabet) {
 
 /**
  * @brief Sobrecarga del operador de extracción >> para la clase Alphabet.
- *
- * Esta función permite leer un alfabeto desde un flujo de entrada (std::istream).
- * El alfabeto se lee como una cadena de caracteres y se almacena en un conjunto (std::set)
- * dentro del objeto Alphabet proporcionado.
- *
- * @param in Flujo de entrada desde el cual se leerá el alfabeto.
- * @param user_alphabet Objeto de la clase Alphabet donde se almacenará el alfabeto leído.
- * @return Referencia al flujo de entrada modificado.
+ * @param in Flujo de entrada.
+ * @param user_alphabet Objeto Alphabet.
+ * @return Referencia al flujo de entrada.
  */
 std::istream& operator>>(std::istream& in, Alphabet& user_alphabet) {
   std::string user_input;
