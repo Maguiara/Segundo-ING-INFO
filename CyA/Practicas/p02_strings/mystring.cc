@@ -23,11 +23,6 @@
 
 /**
  * @brief Constructor de la clase MyString.
- *
- * Este constructor inicializa un objeto MyString con una cadena proporcionada por el usuario.
- * Si la cadena proporcionada es "&", el tamaño se establece en 0. De lo contrario, el tamaño
- * se establece en la longitud de la cadena proporcionada.
- *
  * @param user_string La cadena de caracteres proporcionada por el usuario para inicializar el objeto MyString.
  */
  MyString::MyString(const std::string& user_string) {
@@ -38,11 +33,7 @@
 
 /**
  * @brief Devuelve el tamaño de la cadena almacenada en el objeto MyString.
- *
- * Esta función retorna el tamaño de la cadena `my_string_`. Si la cadena es "&",
- * se considera que su tamaño es 0.
- *
- * @return El tamaño de la cadena `my_string_` como un entero.
+ * @return El tamaño de la cadena `my_string_` como un entero (si es la cadena vacia devuelve 0).
  */
 int MyString::getSize() const {
   return (my_string_ == "&") ? 0 :my_string_.length();
@@ -50,7 +41,6 @@ int MyString::getSize() const {
 
 /**
  * @brief Invierte la cadena almacenada en el objeto MyString.
- *
  * Intercambia los caracteres desde ambos extremos hacia el centro.
  */
 void MyString::Invert() {
@@ -63,11 +53,6 @@ void MyString::Invert() {
 
 /**
  * @brief Sobrecarga del operador < para comparar dos objetos MyString.
- *
- * Esta función compara dos objetos MyString. Si las longitudes de las cadenas
- * son iguales, se comparan alfanumericamente. Si las longitudes son diferentes,
- * se compara en base a la longitud de las cadenas.
- *
  * @param other El objeto MyString con el que se va a comparar.
  * @return true si el objeto actual es menor que el objeto other.
  * @return false en caso contrario.
@@ -79,10 +64,6 @@ bool MyString::operator<(const MyString& other) const {
 
 /**
  * @brief Sobrecarga del operador de extracción >> para la clase MyString.
- *
- * Esta función permite leer una cadena de caracteres desde un flujo de entrada
- * y almacenarla en un objeto de la clase MyString.
- *
  * @param in Flujo de entrada desde el cual se leerá la cadena de caracteres.
  * @param user_string Objeto de la clase MyString donde se almacenará la cadena leída.
  * @return Referencia al flujo de entrada, permitiendo el encadenamiento de operaciones.
@@ -95,9 +76,6 @@ std::istream& operator>>(std::istream& in, MyString& user_string) {
 
 /**
  * @brief Sobrecarga del operador de inserción << para la clase MyString.
- *
- * Esta función permite imprimir el contenido de un objeto MyString en un flujo de salida.
- *
  * @param out Referencia al flujo de salida (std::ostream) donde se imprimirá el contenido.
  * @param user_string Referencia constante al objeto MyString cuyo contenido se va a imprimir.
  * @return Referencia al flujo de salida (std::ostream) después de insertar el contenido del objeto MyString.

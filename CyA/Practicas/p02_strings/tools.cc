@@ -73,13 +73,13 @@ void checkHelp (char* argv[]) {
     "Ficheros: Los ficheros usados en este programa seran uno de entrada y uno de salida en dicho orden\n" <<
     "  Fichero de entrada: Fichero en formato .txt que contendra los datos necesarios para el correcto funcionamiento del programa\n" <<
     "  Fichero de salida: Fichero en el que se guardaran los resultados de las diferentes operaciones realizadas sobre los datos del fihcero de entrada\n" <<
-    "  Opcode: Numeros desde el 1 hasta el 5 en el que cada uno de estos representan una operacion distina a realizar sobre los datos incluidos \n" <<
+    "Opcode: Numeros desde el 1 hasta el 5 en el que cada uno de estos representan una operacion distina a realizar sobre los datos incluidos \n" <<
     "          en el fichero de entrada\n " <<
-    "   1. Alfabeto: Muestra en el fichero de salida asociado el alfabeto al que esa asociado una cadena del fichero de entrada\n " <<
-    "   2. Longitud: Muestra en el fichero de salida asociado la longitud de las cadenas del fichero de entrada\n " <<
-    "   3. Inversa:  Muestra en el fichero de salida la cadena inversa asociada a cada cadena del fichero de entrada\n " <<
-    "   4. Prefijos: Muestra en el fichero de salida todos los prefijos asociados a cada cadena del fichero de entrada\n " <<
-    "   5. Sufijos:  Muestra en el fichero de salida todos los sujifos asociados a cada acadena del fichero de entrada\n " << std::endl;
+    "  1. Alfabeto: Muestra en el fichero de salida asociado el alfabeto al que esa asociado una cadena del fichero de entrada\n " <<
+    "  2. Longitud: Muestra en el fichero de salida asociado la longitud de las cadenas del fichero de entrada\n " <<
+    "  3. Inversa:  Muestra en el fichero de salida la cadena inversa asociada a cada cadena del fichero de entrada\n " <<
+    "  4. Prefijos: Muestra en el fichero de salida todos los prefijos asociados a cada cadena del fichero de entrada\n " <<
+    "  5. Sufijos:  Muestra en el fichero de salida todos los sujifos asociados a cada acadena del fichero de entrada\n " << std::endl;
     exit(0);
   }
   errorMessage(argv);
@@ -96,7 +96,7 @@ void checkHelp (char* argv[]) {
 void checkOpcode (char* argv[]) {
   int user_opcode(std::stoi(argv[3]));
   if (user_opcode < 1 || user_opcode > 5) {
-    std::cout << "Opcode incorrecto" << std::endl;
+    std::cout << "Opcode incorrecto (debe de ser entre 1 y 5)" << std::endl;
     errorMessage(argv);
   }
   return;
@@ -112,7 +112,7 @@ void checkOpcode (char* argv[]) {
  *             argv[0] debera contener el ejecutable del programa  
  */
 void errorMessage(char * argv[]) {
-  std::cout << "Modo de empleo del programa P02-strings: " << argv[0] << " filein.txt fileout.txt opcode\n" << 
+  std::cerr << "Modo de empleo del programa P02-strings: " << argv[0] << " filein.txt fileout.txt opcode\n" << 
   "Para mas informacion acerca del programa pruebe: " << argv[0] << " --help " << std::endl;
   exit(-1);
 }
