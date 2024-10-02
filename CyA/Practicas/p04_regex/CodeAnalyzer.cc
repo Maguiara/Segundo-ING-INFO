@@ -1,13 +1,12 @@
 #include "CodeAnalyzer.h"
 
+
+
 void CodeAnalyzer::analyze(const std::string& inputFile, const std::string& outputFile) {
     std::ifstream input(inputFile);
     std::ofstream output(outputFile);
-    
-    if (!input.is_open() || !output.is_open()) {
-        std::cerr << "Error al abrir los archivos" << std::endl;
-        return;
-    }
+
+    output << "PROGRAM: " << inputFile << std::endl;
 
     std::string line;
     int lineNumber = 0;
@@ -72,5 +71,4 @@ void CodeAnalyzer::analyze_comments(const std::string& line, int lineNumber) {
         std::cout << "[Line " << lineNumber << "] Multi-line comment detected\n";
     }
 }
-
 

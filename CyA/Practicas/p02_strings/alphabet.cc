@@ -57,7 +57,7 @@ std::ostream& operator<<(std::ostream& out, const Alphabet& user_alphabet) {
 std::istream& operator>>(std::istream& in, Alphabet& user_alphabet) {
   std::string user_input;
   in >> user_input; // Leemos el alfabeto como una string 
-  user_alphabet.my_alphabet_.clear(); // Nos aseguramos de que el SET esta vacio
+  user_alphabet.my_alphabet_.clear(); // Nos aseguramos de que el SET esta vaci o
    for (char c : user_input) {
     user_alphabet.my_alphabet_.insert(c);
   }

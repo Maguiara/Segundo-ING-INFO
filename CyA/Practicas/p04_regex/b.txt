@@ -1,0 +1,3 @@
+PROGRAM: code_example.cc
+MAIN:
+True
