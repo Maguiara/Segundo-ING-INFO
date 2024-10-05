@@ -2,7 +2,7 @@
 
 
 
-void CodeAnalyzer::analyze(const std::string& inputFile, const std::string& outputFile) {
+void CodeAnalyzer::Analyze(const std::string& inputFile, const std::string& outputFile) {
     std::ifstream input(inputFile);
     std::ofstream output(outputFile);
 
@@ -13,25 +13,26 @@ void CodeAnalyzer::analyze(const std::string& inputFile, const std::string& outp
     
     while (std::getline(input, line)) {
         lineNumber++;
-        analyze_variables(line, lineNumber);
-        analyze_loops(line, lineNumber);
-        detect_main(line, lineNumber);
-        analyze_comments(line, lineNumber);
+        AnalyzeVariables(line, lineNumber);
+        AnalyzeLoops(line, lineNumber);
+        DetectMain(line, lineNumber);
+        AnalyzeComments(line, lineNumber);
     }
 
-    output << "MAIN:\n" << (hasMain ? "True" : "False") << "\n";
+
+    output << "MAIN:\n" << (get_hasMain() ? "True" : "False") << "\n";
     
     input.close();
     output.close();
 }
 
-void CodeAnalyzer::analyze_variables(const std::string& line, int lineNumber) {
+void CodeAnalyzer::AnalyzeVariables(const std::string& line, int lineNumber) {
     std::regex intRegex(R"(int\s+(\w+)\s*(=\s*[^\;]*)?\;)");
     std::regex doubleRegex(R"(double\s+(\w+)\s*(=\s*[^\;]*)?\;)");
     std::smatch match;
 
     if (std::regex_search(line, match, intRegex)) {
-        std::cout << "[Line " << lineNumber << "] INT: " << match[1] << "\n";
+       variables_.push_back("[LINE " + std::to_string(lineNumber) + " ]");
     }
     
     if (std::regex_search(line, match, doubleRegex)) {
@@ -39,7 +40,7 @@ void CodeAnalyzer::analyze_variables(const std::string& line, int lineNumber) {
     }
 }
 
-void CodeAnalyzer::analyze_loops(const std::string& line, int lineNumber) {
+void CodeAnalyzer::AnalyzeLoops(const std::string& line, int lineNumber) {
     std::regex forRegex(R"(for\s*\(.*\))");
     std::regex whileRegex(R"(while\s*\(.*\))");
 
@@ -52,17 +53,16 @@ void CodeAnalyzer::analyze_loops(const std::string& line, int lineNumber) {
     }
 }
 
-void CodeAnalyzer::detect_main(const std::string& line, int lineNumber) {
+void CodeAnalyzer::DetectMain(const std::string& line, int lineNumber) {
     std::regex mainRegex(R"(int\s+main\s*\()");
     if (std::regex_search(line, mainRegex)) {
-        hasMain = true;
+        has_main_ = true;
     }
 }
 
-void CodeAnalyzer::analyze_comments(const std::string& line, int lineNumber) {
+void CodeAnalyzer::AnalyzeComments(const std::string& line, int lineNumber) {
     std::regex singleLineComment(R"(//.*)");
-    std::regex multiLineComment(R"(/\*[\s\S]*?\*/)");
-
+    std::regex multiLineComment(R"(\/\*[\s\S]*?\*\/)");
     if (std::regex_search(line, singleLineComment)) {
         std::cout << "[Line " << lineNumber << "] Comment: " << line << "\n";
     }
