@@ -1,2 +1,14 @@
-MAIN:
-True
+PROGRAM: code_example.cc
+VARIABLES: 
+[LINE 15 ] INT: suma = 0
+[LINE 16 ] INT: i = 1
+[LINE 23 ] INT: numero
+
+ STAMENTS: 
+
+ MAIN: 
+False
+ COMMENTS: 
+[Lines 1 - 9 ] Multiline commemt detected
+[Line 13] Comment: // Función que calcula la suma de los primeros n números naturales;
+[Line 27] Comment:     // Calcula y muestra la suma de los primeros 'numero' naturales;
