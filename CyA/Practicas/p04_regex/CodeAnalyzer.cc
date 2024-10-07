@@ -18,6 +18,20 @@
 
 #include "CodeAnalyzer.h"
 
+void CodeAnalyzer::ReadDescription(const std::string& inputfile) {
+  std::ifstream input(inputfile);
+  std::getline(input, description_);
+  std::regex endCommentRegex(R"(\*\/)");
+    // Seguir leyendo hasta encontrar el final del comentario
+    while (!std::regex_search(description_, endCommentRegex)) {
+        std::string nextLine;
+        if (std::getline(input, nextLine)) {
+            description_ += "\n" + nextLine;
+        } else {
+            break; // Fin del archivo
+        }
+    }
+} 
 
 /**
  * @brief Analiza un archivo de código fuente y genera un informe.
@@ -29,7 +43,7 @@ void CodeAnalyzer::Analyze(const std::string& inputfile, const std::string& outp
   std::ifstream input(inputfile);
 
   //Lee la descripcion del archivo
-  void ReadDescription(const std::string& inputfile);
+  ReadDescription(inputfile);
   // Variables necesarias para el analisis del archivo
   std::string line;
   int lineNumber = 0;
@@ -63,20 +77,6 @@ void CodeAnalyzer::Analyze(const std::string& inputfile, const std::string& outp
   input.close();
 }
 
-void CodeAnalyzer::ReadDescription(const std::string& inputfile) {
-  std::ifstream input(inputfile);
-  std::getline(input, description_);
-  std::regex endCommentRegex(R"(\*\/)");
-    // Seguir leyendo hasta encontrar el final del comentario
-    while (!std::regex_search(description_, endCommentRegex)) {
-        std::string nextLine;
-        if (std::getline(input, nextLine)) {
-            description_ += "\n" + nextLine;
-        } else {
-            break; // Fin del archivo
-        }
-    }
-} 
 
 /**
  * @brief Escribe los resultados del análisis en un archivo de salida.
@@ -90,11 +90,11 @@ void CodeAnalyzer::ReadDescription(const std::string& inputfile) {
  */
 void CodeAnalyzer::WriteOutput(const std::string& inputFile, const std::string& outputFile, variableHandler& variables, loopsHandler& loops, commentHandler& comments) {
   std::ofstream output(outputFile);
-  output << "PROGRAM: " << inputFile << std::endl << std::endl;
+  output << "PROGRAM: " << inputFile << std::endl;
 
-  output << description_ << std::endl;
+  output << "\n DESCRIPTION\n " << description_ << std::endl;
 
-  output << "VARIABLES: \n";
+  output << "\n VARIABLES: \n";
   variables.PrintVariables(output); 
 
   output << "\n STATEMENTS: \n";

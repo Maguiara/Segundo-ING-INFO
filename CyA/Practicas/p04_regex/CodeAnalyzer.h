@@ -24,7 +24,6 @@ public:
 
     //Getters
     bool get_hasMain() const {return has_main_;}
-    std::string get_description() const {return description_; }
     //Funciones para analizar el codigo e imprimir la salida
     void ReadDescription (const std::string& inputfile);
     void Analyze(const std::string& inputFile, const std::string& outputFile);
@@ -37,7 +36,7 @@ private:
     void DetectMain(const std::string& line);
     void AnalyzeComments(const std::string& line, int& lineNumber, std::ifstream& input, commentHandler& comments);
     bool has_main_ = false;
-    std::string description_;
+    std::string description_{""};
 };
 
 

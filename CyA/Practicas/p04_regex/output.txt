@@ -1,0 +1,31 @@
+PROGRAM: code_example.cc
+
+ DESCRIPTION
+ /** 
+ * Universidad de La Laguna
+ * Escuela Superior de Ingeniería y Tecnología
+ * Computabilidad y Algoritmia
+ * 
+ * @brief Este programa calcula la suma de los primeros n números naturales.
+ * @version 1.0
+ * 
+ * @see https://github.com/ULL-2024-2025/Code-Examples
+ */
+
+ VARIABLES: 
+[LINE 16] INT: suma= 0
+[LINE 17] DOUBLE: hola
+[LINE 25] INT: numero
+[LINE 26] DOUBLE: adios= 3.2
+
+ STATEMENTS: 
+[Line 18] LOOP: for
+
+ MAIN: 
+True
+
+ COMMENTS: 
+[Lines 1 - 10 ] DESCRIPTION
+[Line 14] Comment: // Función que calcula la suma de los primeros n números naturales;
+[Lines 30 - 32 ] Multiline comment detected
+[Line 34] Comment:     // Calcula y muestra la suma de los primeros 'numero' naturales;
