@@ -10,3 +10,4 @@ class structHandler{
  private:
   std::vector<std::string> structs_;
 };
+

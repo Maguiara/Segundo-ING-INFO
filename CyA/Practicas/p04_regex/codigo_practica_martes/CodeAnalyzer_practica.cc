@@ -53,7 +53,7 @@ void CodeAnalyzer::Analyze(const std::string& inputfile, const std::string& outp
   std::regex mainRegex(R"(int\s+main\s*\()"); // Detecta el main
   std::regex singleLineCommentRegex(R"(\/\/.*)"); // Detecta los comentarios de una linea
   std::regex multiLineCommentRegex(R"(\/\*.*)"); // Detecta los inicios de comentarios multilinea
-  std::regex structRegex(R"((struct)\s+(\w+)(\{|\;))");
+  std::regex structRegex(R"((struct)\s+(\w+)\s*((\{|\s+\w+\;)))");
   std::smatch match;
   // Variables donde se guardara la informacion
   variableHandler variables;
@@ -202,12 +202,14 @@ void CodeAnalyzer::AnalyzeComments(const std::string& line, int& lineNumber, std
     std::regex end_multiline_comment(R"(\*\/)");
     int first_comment_line = lineNumber;
     std::string comment_line;
+    std::string multiline_comment = line;
 
     while (std::getline(input, comment_line) && !(std::regex_search(comment_line, end_multiline_comment))) {
       ++lineNumber;
+      multiline_comment += '\n' + comment_line; 
     }
     ++lineNumber;
-    comments.StoreMultiLineComments(first_comment_line, lineNumber);
+    comments.StoreMultiLineComments(first_comment_line, lineNumber, multiline_comment);
   }
 }
 
@@ -216,7 +218,7 @@ void CodeAnalyzer::AnalyzeComments(const std::string& line, int& lineNumber, std
 void CodeAnalyzer::AnalyzeStructs(const std::string& line, const std::smatch& match, const int lineNumber, structHandler& structhandler) {
   if (match[3].str() == "{") {
     structhandler.StoreDefinition(line, match, lineNumber);
-  } else if (match[3].str() == ";") {
+  } else {
     structhandler.StoreDeclaration(line, match, lineNumber);
   }
 

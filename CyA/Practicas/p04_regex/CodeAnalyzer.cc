@@ -195,11 +195,13 @@ void CodeAnalyzer::AnalyzeComments(const std::string& line, int& lineNumber, std
     std::regex end_multiline_comment(R"(\*\/)");
     int first_comment_line = lineNumber;
     std::string comment_line;
+    std::string multiline_comment = line;
 
     while (std::getline(input, comment_line) && !(std::regex_search(comment_line, end_multiline_comment))) {
       ++lineNumber;
+      multiline_comment += '\n' + comment_line; 
     }
     ++lineNumber;
-    comments.StoreMultiLineComments(first_comment_line, lineNumber);
+    comments.StoreMultiLineComments(first_comment_line, lineNumber, multiline_comment);
   }
-}
+} 
