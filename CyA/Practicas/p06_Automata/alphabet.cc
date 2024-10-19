@@ -30,6 +30,14 @@ Alphabet::Alphabet(const std::string& user_alphabet) {
   }
 } 
 
+bool Alphabet::find(char c) {
+  return my_alphabet_.find(c) != my_alphabet_.end();
+}
+
+void Alphabet::Emplace(const char symbol) {
+  my_alphabet_.emplace(symbol);
+}
+
 /**
  * @brief Sobrecarga del operador de inserción para la clase Alphabet.
  * @param out Flujo de salida.

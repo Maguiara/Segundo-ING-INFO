@@ -28,7 +28,8 @@ class Alphabet {
   Alphabet(const std::string& user_alphabet);
   //Getters
   std::set<char> my_alphabet() { return my_alphabet_; }
-  bool CheckAlphabet();
+  bool find(char c);
+  void Emplace(const char symbol);
   //Sobrecargas
   friend std::istream& operator>>(std::istream& in, Alphabet& user_alphabet);
   friend std::ostream& operator<<(std::ostream& out, const Alphabet& user_alphabet);
