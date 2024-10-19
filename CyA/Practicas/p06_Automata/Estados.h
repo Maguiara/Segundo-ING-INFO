@@ -1,4 +1,7 @@
 
+#ifndef ESTADOS_H
+#define ESTADOS_H
+
 #include "tools.h"
 
 class State {
@@ -17,7 +20,7 @@ class State {
   std::set<int> getTransitions(char symbol);
 
   //sobrecargas
-  bool operator<(const State& other);
+  bool operator<(const State& other) const;
   friend std::istream operator>>(std::ifstream& in, State& estado);
  private:
   int state_id_;
@@ -25,3 +28,7 @@ class State {
   int num_transitions_;
   std::multimap<char, int> transicions_;
 };
+
+
+
+#endif

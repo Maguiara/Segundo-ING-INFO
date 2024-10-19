@@ -1,5 +1,5 @@
 
-
+#include "tools.h"
 #include "Automata.h"
 #include "Estados.h"
 

@@ -19,11 +19,11 @@
 #define TOOLS_H
 
 #include <iostream>
-#include <fstream>
-#include <regex>
-#include <string>
-#include <vector>
 #include <set>
+#include <vector>
+#include <map>
+#include <fstream>
+#include <sstream>
 
 void usage (int argc, char* argv[]);
 void argumentFail(char* argv[]);

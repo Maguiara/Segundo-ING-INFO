@@ -2,12 +2,6 @@
 #ifndef AUTOMATA_H
 #define AUTOMATA_H
 
-#include <iostream>
-#include <set>
-#include <vector>
-#include <map>
-#include <fstream>
-#include <sstream>
 #include "alphabet.h"
 #include "Estados.h"
 
