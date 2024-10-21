@@ -19,7 +19,6 @@ void Automata::LoadInfo(const std::string& automaton_especifications) {
   std::string especification_line;
   //Leemos el alfabeto
   std::getline(especifications, especification_line);
-  /*Añadir la expeccion de que no se puede tener & en el alfabeto */
   alphabet_ = Alphabet(especification_line);
   //Leemos el numero total de estados
   std::getline(especifications, especification_line);
@@ -31,13 +30,13 @@ void Automata::LoadInfo(const std::string& automaton_especifications) {
   //Leemos todas las lineas de caracteristicas de los estados
   for (int i{0}; i < total_states_; i++) {
     std::getline(especifications, especification_line);
+    std::istringstream issStatesinfo(especification_line);
     State read_state(especification_line, alphabet_);
     states_.emplace(read_state);
   }
   //Excepcion en caso de que haya mas lineas que estados totales especificados
   if(std::getline(especifications, especification_line)) {
-    std::cout << "Se han especificado mas lineas de informacion de estados que estados totales especificados\n Por favor revise que su archivo: " 
-                << automaton_especifications << " esta correctamente escrito" << std::endl;
+    std::cout << "Se han especificado mas lineas de informacion de estados que estados totales especificados\n Por favor revise que su archivo: " << automaton_especifications << " esta correctamente escrito" << std::endl;
   }
 } 
 
@@ -49,7 +48,8 @@ void Automata::SimulateStrings(const std::string& inputs) {
   //Creamos el set que contendra los estados que se vayan leyendo
 
   while (std::getline(user_inputs_strings, user_string_to_read)) {
-    std::cout << " si hombre" << std::endl;
+    user_string_to_read.erase(user_string_to_read.find_last_not_of(" \n\r\t") + 1); 
+
     std::set<int> current_states_id;
     current_states_id.emplace(initial_state_id_);
     bool rejected = false;
@@ -60,7 +60,7 @@ void Automata::SimulateStrings(const std::string& inputs) {
     //Leemos cada simbolo de la cadena
     for (char symbol : user_string_to_read) {
       if(!alphabet_.find(symbol)) {
-        std::cout << user_string_to_read << " --- Rejected por gay" << std::endl;
+        std::cout << user_string_to_read << " --- Rejected" << std::endl;
         rejected = true;
         break;
       }
@@ -84,7 +84,7 @@ void Automata::SimulateStrings(const std::string& inputs) {
       current_states_id = next_states;
 
       if(current_states_id.empty()) {
-        std::cout << user_string_to_read << " --- Rejected si hombre" << std::endl;
+        std::cout << user_string_to_read << " --- Rejected" << std::endl;
         rejected = true;
         break;
       }
@@ -100,9 +100,9 @@ void Automata::SimulateStrings(const std::string& inputs) {
       }
 
       if (accepted) {
-        std::cout << user_string_to_read << " --- Accepted no hombre" << std::endl;
+        std::cout << user_string_to_read << " --- Accepted" << std::endl;
       } else {
-        std::cout << user_string_to_read << " --- Rejected si hombre2" << std::endl;
+        std::cout << user_string_to_read << " --- Rejected" << std::endl;
       }
     }
 

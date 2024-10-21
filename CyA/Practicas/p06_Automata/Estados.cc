@@ -21,7 +21,7 @@ State::State(const std::string& state_information, const Alphabet& valid_alphabe
     }
     int transition_state_id;
     issStateInfo >> transition_state_id;
-    if( transition_state_id < 0 | transition_state_id >= 4) {
+    if( transition_state_id < 0 ) {
       std::cout << "El estado al que se intenta transitar ( " << transition_state_id << " ) con el simbolo " << transition_symbol <<  " no es valido" << std::endl;
       exit(-1);
     }

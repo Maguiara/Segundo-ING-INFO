@@ -8,6 +8,7 @@
 int main (int argc, char* argv[]) {
   usage(argc, argv);
   Automata user_automata;
-  user_automata.AnalizeAutomaton(argv[1], argv[2]);
+  std::string input = argv[2];
+  user_automata.AnalizeAutomaton(argv[1], input);
 
 } 
