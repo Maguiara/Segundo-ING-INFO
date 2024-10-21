@@ -12,7 +12,7 @@ void argumentFail(char* argv[]) {
 
 void checkFiles(char* argv[]) {
   std::ifstream user_input_file (argv[1]);
-  std::ofstream user_output_file (argv[2]);
+  std::ifstream user_output_file (argv[2]);
   if ( !user_input_file.is_open() | !user_output_file.is_open()) {
     std::cout << "No se pudo abrir los archivos. Comprueben que estos existan y/o esten en un estado usable" << std::endl;
     exit(-1);
