@@ -1,16 +1,14 @@
-// Universidad de La Laguna
-// Escuela Superior de Ingeniería y Tecnología
-// Grado en Ingeniería Informática
-// Asignatura: Computabilidad y Algoritmia
-// Curso: 2º
-// Práctica 6: Diseño e implementación de un simulador de autómatas finitos
-// Autor: Daniel Martínez Sopo
-// Correo: alu0101675893@ull.edu.es
-// Fecha: 19/10/2024
-// Archivo Alphabet.cc: Contiene las implementaciones de métodos de la clase Alphabet.
-// Historial de revisiones
-// 19/10/2024 - Creación (primera versión) del código
-
+/*Universidad de La Laguna
+* Escuela Superior de Ingeniería y Tecnología
+* Grado en Ingeniería Informática
+* Asignatura: Computabilidad y Algoritmia
+* Curso: 2º
+* Práctica 6: Diseño e implementación de un simulador de autómatas finitos
+* Autor: Marco Aguiar Álvarez
+* Correo: alu0101675893@ull.edu.es
+* Fecha: 19/10/2024
+* Archivo Alphabet.cc: Contiene las implementaciones de métodos de la clase Alphabet.
+**/
 #include "Alphabet.h"
 
 
