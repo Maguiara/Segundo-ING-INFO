@@ -1,7 +1,0 @@
-abb
-bb
-&
-aabbaa
-bab
-bababa
-bbabba

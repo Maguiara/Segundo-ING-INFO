@@ -1,24 +1,55 @@
+/*Universidad de La Laguna
+* Escuela Superior de Ingeniería y Tecnología
+* Grado en Ingeniería Informática
+* Asignatura: Computabilidad y Algoritmia
+* Curso: 2º
+* Práctica 6: Diseño e implementación de un simulador de autómatas finitos
+* Autor: Marco Aguiar Álvarez
+* Correo: alu0101675893@ull.edu.es
+* Fecha: 19/10/2024
+* Archivo Alphabet.cc: Contiene las implementaciones de métodos de la clase Alphabet.
+**/
+
 
 #include "tools.h"
 #include "Automata.h"
 #include "Estados.h"
 #include "Alphabet.h"
 
-
+/**
+ * @brief Analiza un autómata con especificaciones e inputs.
+ * 
+ * Carga la información del autómata y simula las cadenas proporcionadas.
+ *
+ * @param automaton_especifications Especificaciones del autómata.
+ * @param inputs Cadenas de entrada para simular.
+ */
 void Automata::AnalizeAutomaton(const std::string& automaton_especifications, const std::string& inputs) {
   LoadInfo(automaton_especifications);
   SimulateStrings(inputs);
 }
 
 
-
-
+/**
+ * @brief Carga la información del autómata desde un archivo de especificaciones.
+ * 
+ * Lee el alfabeto, el número total de estados, el estado inicial y las características
+ * de cada estado. Valida que no haya más líneas de las esperadas en el archivo.
+ *
+ * @param automaton_especifications Ruta al archivo con las especificaciones del autómata.
+ */
 void Automata::LoadInfo(const std::string& automaton_especifications) {
   // Creamos el archivo de especificaciones
   std::ifstream especifications(automaton_especifications);
   std::string especification_line;
   //Leemos el alfabeto
   std::getline(especifications, especification_line);
+  for (char c : especification_line) {
+    if (c == '&') {
+      std::cout << "El alfabeto introducido no es valido " << std::endl;
+      exit(-1);
+    }
+  }
   alphabet_ = Alphabet(especification_line);
   //Leemos el numero total de estados
   std::getline(especifications, especification_line);
@@ -31,7 +62,7 @@ void Automata::LoadInfo(const std::string& automaton_especifications) {
   for (int i{0}; i < total_states_; i++) {
     std::getline(especifications, especification_line);
     std::istringstream issStatesinfo(especification_line);
-    State read_state(especification_line, alphabet_);
+    State read_state(especification_line, alphabet_, total_states_);
     states_.emplace(read_state);
   }
   //Excepcion en caso de que haya mas lineas que estados totales especificados
@@ -40,7 +71,15 @@ void Automata::LoadInfo(const std::string& automaton_especifications) {
   }
 } 
 
-
+/**
+ * @brief Simula la aceptación de cadenas de entrada en el autómata.
+ * 
+ * Lee cadenas desde un archivo, verifica si cada cadena es aceptada
+ * o rechazada según las transiciones del autómata. Considera las 
+ * transiciones epsilon y valida los símbolos contra el alfabeto.
+ *
+ * @param inputs Ruta al archivo que contiene las cadenas de entrada.
+ */
 void Automata::SimulateStrings(const std::string& inputs) {
   //Creamos el archivo de cadenas del usuario
   std::ifstream user_inputs_strings(inputs);
@@ -48,7 +87,7 @@ void Automata::SimulateStrings(const std::string& inputs) {
   //Creamos el set que contendra los estados que se vayan leyendo
 
   while (std::getline(user_inputs_strings, user_string_to_read)) {
-    user_string_to_read.erase(user_string_to_read.find_last_not_of(" \n\r\t") + 1); 
+    //user_string_to_read.erase(user_string_to_read.find_last_not_of(" \n\r\t") + 1); 
 
     std::set<int> current_states_id;
     current_states_id.emplace(initial_state_id_);
@@ -56,7 +95,7 @@ void Automata::SimulateStrings(const std::string& inputs) {
     //Comprobamos que desde el estado inicial existan epsilon transiciones
     State initial_state = SearchState(initial_state_id_);
     std::set<int> epsilon_transitions = initial_state.getTransitions('&');
-    current_states_id.insert(epsilon_transitions.begin(), epsilon_transitions.end());
+    if (!epsilon_transitions.empty()) current_states_id.insert(epsilon_transitions.begin(), epsilon_transitions.end());
     //Leemos cada simbolo de la cadena
     for (char symbol : user_string_to_read) {
       if(!alphabet_.find(symbol)) {
@@ -107,10 +146,18 @@ void Automata::SimulateStrings(const std::string& inputs) {
     }
 
   }
-
   user_inputs_strings.close();
-
 }
+
+/**
+ * @brief Busca un estado por su ID en el conjunto de estados.
+ * 
+ * Crea un objeto State con el ID proporcionado y lo busca en el conjunto.
+ * Retorna el estado correspondiente.
+ *
+ * @param state_id ID del estado a buscar.
+ * @return State El estado correspondiente al ID buscado.
+ */
 
 State Automata::SearchState(const int state_id) {
   State next_state;
@@ -119,6 +166,8 @@ State Automata::SearchState(const int state_id) {
   next_state = *it;  // Actualizar al siguiente estado
   return next_state;
 }
+
+
 
 
 /**
