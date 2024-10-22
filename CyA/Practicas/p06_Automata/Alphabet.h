@@ -4,13 +4,11 @@
 // Asignatura: Computabilidad y Algoritmia
 // Curso: 2º
 // Práctica 6: Diseño e implementación de un simulador de autómatas finitos
-// Autor: Daniel Martínez Sopo
-// Correo: alu0101675893@ull.edu.es
+// Autor: Marco Aguiar Álvarez
+// Correo: alu0101620961@ull.edu.es
 // Fecha: 19/10/2024
 // Archivo Alphabet.h: Contiene la clase Alphabet utilizada en el proyecto, esta cumple el rol
 //                     de alfabeto en el contexto de la computabilidad.
-// Historial de revisiones
-// 19/10/2024 - Creación (primera versión) del código
 #ifndef ALPHABET_H
 #define ALPHABET_H
 
