@@ -1,4 +1,4 @@
-module c1(output reg out, input wire a, input wire b, input wire [1:0] S); //Con reg out conductual
+module cl(output reg out, input wire a, input wire b, input wire [1:0] S); //Con reg out conductual
 
     always @(a,b,S) 
     begin
