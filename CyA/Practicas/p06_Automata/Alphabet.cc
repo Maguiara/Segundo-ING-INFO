@@ -11,7 +11,6 @@
 **/
 #include "Alphabet.h"
 
-
 /**
  * @brief Constructor que inicializa un objeto Alphabet con una cadena de símbolos.
  * 
