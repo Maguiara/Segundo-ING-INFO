@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# "Foto" del proceso ps sin los identificadores de sesion 0
+# Para añadir los identificadores de sesion 0 se usa -eo sid,pgid,pid,euser,tty,%mem,cmd, si no los quiero pongo -o
+PS_HEADER=$(ps -eo sid,pgid,pid,euser,tty,%mem,cmd --sort=euser | awk 'NR==1 {print $0}')
+PS_FOTO=$(ps -eo sid,pgid,pid,euser,tty,%mem,cmd --sort=euser)
+
+# Para imprimir respetando los saltos de linea
+#printf "%s\n" "$PS_FOTO" 
+
+# Para imprimir sin respetar los saltos de linea
+#echo $PS_FOTO
+
+############################################################################################################
+##FUNCIONES USADAS EN EL SCRIPT##
+# Funcion que muestra la ayuda del script
+show_help() {
+  echo "Uso: $0 [-h] [-z] [-u user] "
+  echo  "Opciones: "
+  echo "-h  Muestra la ayuda"
+  echo "-z  Muestra los procesos con identificador de sesion 0"
+  echo "-u user  Muestra los procesos del usuario indicado"
+  exit 0
+}
+
+# Funcion que muestra los procesos con identificador de sesion 0
+show_indentifier() {
+  echo "Procesos con identificador de sesion 0"
+  echo
+  printf "%s\n" "$PS_HEADER"
+  printf "%s\n" "$PS_FOTO" | awk '$1 == 0 {print $0}'
+}
+
+show_process_without_identifier() {
+
+  echo "Procesos sin identificador de sesion 0"
+  echo
+  printf "%s\n" "$PS_HEADER"
+  printf "%s\n" "$PS_FOTO" | awk '$1 != 0 {print $0}'
+}
+
+
+#Funcion para mostrar un mensaje de error y salir
+error_exit() {
+    echo "$1" 1>&2
+    exit 1
+}
+
+############################################################################################################
+##GESTION DE LAS FLAGS Y ARGUMENTOS DEL SCRIPT##
+
+# Flags para las opciones del script
+show_help_flag=false
+show_identifier_flag=false
+show_user_flag=false
+# Array para almacenar los usuarios
+usuarios=()
+
+# Funcion para gestionar las opciones del script
+while getopts ":hzu:" option; do
+  case $option in 
+    h)
+      show_help_flag=true
+      exit 0
+      ;;
+    z)
+      # Mostrar los procesos con identificador de sesion 0
+      show_identifier_flag=true
+      ;;
+    u)
+     # Mostrar los procesos del usuario indicado
+      show_user_flag=true
+      echo "Usuario: $OPTARG"
+      ;;
+    \?)
+      error_exit "Opcion invalida: $OPTARG"
+      ;;
+    :)
+      error_exit 
+      ;;
+  esac
+done
+
+############################################################################################################
+##CUERPO DEL SCRIPT##
+
+LOGICA USADA AL INICIO (ESTA MAL)
+##Si se ha activado la bandera de mostrar los procesos con identificador de sesion 0
+#if $show_identifier_flag; then
+#  show_indentifier
+#fi
+#
+##Si se ha activado la bandera de mostrar los procesos de un usuario
+#if $show_user_flag; then
+#  show_process_user "$user_arg"
+#fi
+#
+##Si no se ha activado ninguna bandera, se muestran los procesos sin el identificador de sesion 0
+## Como son variables booleanas no es necesario usar [[]] para compararlas entre si
+#if  ! $show_help_flag  && ! $show_identifier_flag && ! $show_user_flag ; then
+#  show_process_without_identifier
+#fi
+#
