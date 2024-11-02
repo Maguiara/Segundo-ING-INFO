@@ -182,9 +182,7 @@ elif $show_identifier_flag; then
 
 elif $show_user_flag; then
   show_process_user "${usuarios[@]}"
-
+  
 else 
   show_process_without_identifier_0
-
 fi
-
