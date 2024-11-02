@@ -47,7 +47,6 @@ std::ostream& operator<<(std::ostream& out, const Alphabet& user_alphabet) {
   out << "}";
   return out;
 }
-
 /**
  * @brief Sobrecarga del operador de extracción >> para la clase Alphabet.
  * @param in Flujo de entrada.
