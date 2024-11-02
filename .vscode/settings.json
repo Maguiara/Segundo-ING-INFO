@@ -1,5 +1,7 @@
 {
-  "files.associations": {
+  "files.associations": { 
+    "editor.fontFamily": "Fira Code",
+    "editor.fontLigatures": true,
     "array": "cpp",
     "atomic": "cpp",
     "bit": "cpp",
