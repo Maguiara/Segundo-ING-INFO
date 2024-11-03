@@ -182,16 +182,24 @@ void Grammar::SegundaParte() {
   for (auto it = productions_.begin(); it != productions_.end(); ++it) {
     std::string production = it->second;
     if (production.size() >= 3) {
-      char A = it->first;
+      char non_terminal = it->first;
       std::vector<char> new_non_terminals;
+      bool is_even = production.size() % 2 == 0;
 
       // Generate m - 2 new non-terminal symbols S -> AXBX
-      for (long unsigned int i = 0; i < production.size() - 2; ++i) {
-        new_non_terminals.push_back(GenerateNonTerminal(A));
+      //Revisar esta parte bien luego
+      if (is_even) {
+        for (long unsigned int i = 0; i < production.size() - 2; i += 2) {
+          new_non_terminals.push_back(GenerateNonTerminal(non_terminal));
+        }
+      } else {
+        for (long unsigned int i = 0; i < production.size() - 3; i += 2) {
+          new_non_terminals.push_back(GenerateNonTerminal(non_terminal));
+        }
       }
 
       // Replace the production A → B1B2 . . . Bm with the new productions
-      new_productions[A] = std::string(1, production[0]) + new_non_terminals[0];
+      new_productions[non_terminal] = std::string(1, production[0]) + new_non_terminals[0];
       for (long unsigned int i = 0; i < new_non_terminals.size() - 1; ++i) {
         new_productions[new_non_terminals[i]] = std::string(1, production[i + 1]) + new_non_terminals[i + 1];
       }

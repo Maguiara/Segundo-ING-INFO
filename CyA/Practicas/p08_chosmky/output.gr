@@ -5,22 +5,22 @@ c
 9
 A
 B
+C
+D
+E
+F
 S
-T
-U
-V
-W
 X
 Y
 20
 A -> a
 B -> b
+C -> XD
+D -> BX
+E -> BX
+F -> XB
 S -> AB
-S -> AW
-T -> XU
-U -> BX
-V -> BX
-W -> XB
+S -> AF
 X -> AY
 X -> BY
 X -> a
