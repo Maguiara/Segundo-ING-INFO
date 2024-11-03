@@ -1,0 +1,32 @@
+3
+a
+b
+c
+9
+A
+B
+S
+T
+U
+V
+W
+X
+Y
+20
+A -> a
+B -> b
+S -> AB
+S -> AW
+T -> XU
+U -> BX
+V -> BX
+W -> XB
+X -> AY
+X -> BY
+X -> a
+X -> b
+Y -> AY
+Y -> BY
+Y -> a
+Y -> b
+Y -> c
