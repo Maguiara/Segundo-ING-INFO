@@ -2,25 +2,21 @@
 a
 b
 c
-9
+7
 A
 B
-C
-D
-E
-F
 S
+T
+U
 X
 Y
-20
-A -> a
-B -> b
-C -> XD
-D -> BX
-E -> BX
-F -> XB
+16
+S -> ABX
+S -> AXB
 S -> AB
-S -> AF
+S -> AT
+T -> XU
+U -> BX
 X -> AY
 X -> BY
 X -> a

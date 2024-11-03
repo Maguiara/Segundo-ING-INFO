@@ -139,7 +139,7 @@ char Grammar::GenerateNonTerminal(const char c) {
 //}
 
 void Grammar::PrimeraParte() {
-  // Map to store terminal to non-terminal mappings
+  // Mapa para almacenar la correspondencia entre terminales y no terminales
   std::map<char, char> terminal_to_non_terminal;
 
   for (auto it = productions_.begin(); it != productions_.end(); ++it) {
@@ -149,23 +149,23 @@ void Grammar::PrimeraParte() {
       for (char& c : production) {
         if (islower(c)) {
           if (terminal_to_non_terminal.find(c) == terminal_to_non_terminal.end()) {
-            // Generate a new non-terminal for this terminal
+            // Generar un nuevo no terminal para el terminal c
             char new_non_terminal = GenerateNonTerminal(c);
             terminal_to_non_terminal[c] = new_non_terminal;
-            // Add the new production to the set
-            if (productions_.find(new_non_terminal) == productions_.end()) {
+            // Añadir la nueva producción al conjunto de producciones
+            if (!ComprobarProduccion(std::string(1, c))) {
               productions_.emplace(new_non_terminal, std::string(1, c));
               num_of_productions_++;
             }
           }
-          // Replace terminal with its corresponding non-terminal
+          // Remplazar el terminal c por el no terminal correspondiente
           new_production += terminal_to_non_terminal[c];
         } else {
           new_production += c;
         }
       }
   
-      // Update the production with the new production string
+      // Actualizar la producción original con los no terminales
       it->second = new_production;
     }
   }
@@ -185,21 +185,24 @@ void Grammar::SegundaParte() {
       char non_terminal = it->first;
       std::vector<char> new_non_terminals;
       bool is_even = production.size() % 2 == 0;
-
-      // Generate m - 2 new non-terminal symbols S -> AXBX
-      //Revisar esta parte bien luego
-      if (is_even) {
-        for (long unsigned int i = 0; i < production.size() - 2; i += 2) {
-          new_non_terminals.push_back(GenerateNonTerminal(non_terminal));
+      // Creamos nuevos no terminales para las producciones
+      // 
+      if(is_even) {
+        for (long unsigned int i = 0; i < production.size(); i += 2) {
+          char new_non_terminal = GenerateNonTerminal(non_terminal);
+          new_non_terminals.push_back(new_non_terminal);
+          new_productions[new_non_terminal] = std::string(1, production[i]) + production[i + 1];
         }
       } else {
-        for (long unsigned int i = 0; i < production.size() - 3; i += 2) {
-          new_non_terminals.push_back(GenerateNonTerminal(non_terminal));
+        for (long unsigned int i = 0; i < production.size() - 2; i += 2) {
+          char new_non_terminal = GenerateNonTerminal(non_terminal);
+          new_non_terminals.push_back(new_non_terminal);
+          new_productions[new_non_terminal] = std::string(1, production[i]) + production[i + 1];
         }
       }
 
       // Replace the production A → B1B2 . . . Bm with the new productions
-      new_productions[non_terminal] = std::string(1, production[0]) + new_non_terminals[0];
+      new_productions[non_terminal] = std::string(1, production[0]) + new_non_terminals[0]; // S -> AC
       for (long unsigned int i = 0; i < new_non_terminals.size() - 1; ++i) {
         new_productions[new_non_terminals[i]] = std::string(1, production[i + 1]) + new_non_terminals[i + 1];
       }
@@ -227,6 +230,21 @@ void Grammar::Write(const std::string& output_file) {
   for (auto it = non_terminals_.begin(); it != non_terminals_.end(); it++) output_grammar << *it << std::endl;
   output_grammar << num_of_productions_ << std::endl;
   for (auto it = productions_.begin(); it != productions_.end(); it++) output_grammar << it->first << " -> " << it->second << std::endl;
+}
+
+
+
+void Grammar::ErrorExit() {
+  
+}
+
+
+bool Grammar::ComprobarProduccion(const std::string& production) {
+  
+  // Comprobar que la producción existe ya en el conjunto de producciones, si existe devuelve true
+  for (auto it = productions_.begin(); it != productions_.end(); it++) 
+  if (it->second == production) return true;
+  return false;
 }
 
   /** Investigar si se puede hacer esto y luego getlines 
