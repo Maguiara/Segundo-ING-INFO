@@ -67,7 +67,7 @@ show_process_without_identifier_0() {
   printf "%s\n" "$PS_HEADER"
   printf "%s\n" "$PS_FOTO" | awk -v actual_user="$ACTUAL_USER" '$1 != 0 && $4 == actual_user {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}'
 
-  if [[ $show_num_process_flag ]]; then 
+  if [[ $show_num_process_flag == true ]]; then 
     printf "%s\n" "$PS_FOTO" | awk -v actual_user="$ACTUAL_USER" '$1 != 0 && $4 == actual_user {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}'| awk 'END {print "El numero de lineas es: " NR}'
   fi
   exit 0
@@ -132,6 +132,19 @@ show_lsof() {
   exit 0
 }
 
+# Funcion para procesar los usuarios
+process_users() {
+  # Bucle para recorrer los usuarios
+  for user in "${usuarios_temporales[@]}"; do
+    # Comprobacion de que no sea una opcion o un directorio
+    if [[ ! $user == -* && ! -d $user ]] then
+      usuarios+=("$user")
+    fi
+  done
+}
+
+
+
 #Funcion para mostrar un mensaje de error y salir
 error_exit() {
     echo "$1" 1>&2
@@ -153,7 +166,7 @@ dir_lsof=""
 usuarios=()
 
 # Funcion para gestionar las opciones del script
-while getopts ":hzd:u:n" option; do
+while getopts ":hz :d:u:n" option; do
   case $option in 
     h)
       # Activar el flag de mostrar la ayuda
@@ -167,14 +180,16 @@ while getopts ":hzd:u:n" option; do
      # Activar el flag de mostrar los procesos de un usuario
       show_user_flag=true
       # Desplazar a la siguiente posición
-      shift 
       # Capturar todos los argumentos que siguen hasta que encuentres otro flag o se terminen los argumentos
-      usuarios=("$@")
+      # Guardar los argumentos en el array de usuarios
+      usuarios_temporales=("$@")
+      process_users "${usuarios[@]}"
       ;;
     d)
       # Activar el flag de mostrar los procesos con lsof
       show_lsof_flag=true
-      dir_lsof="$2"
+      # Guardar el directorio en la variable
+      dir_lsof=$OPTARG
       ;;
     n)
       #Activar el flag de procecos en la tabla
@@ -201,7 +216,7 @@ echo "Bandera para los procesos 0: $show_identifier_flag"
 echo "Bandera para los usuarios: $show_user_flag"
 echo "Bandera para lsof: $show_lsof_flag"
 echo "Direcctorio para lsof: $dir_lsof"
-echo "Usuarios especificados: ${usuarios[@]}"
+echo "Usuarios especificados: ${usuarios[*]}"
 exit 0
 
 # Si se ha activado la bandera de ayuda, se muestra la ayuda
@@ -215,10 +230,10 @@ if $show_identifier_flag; then
     show_indentifier_0 "${usuarios[@]}" 
 # Si se ha activado la bandera de mostrar los procesos con lsof
 elif $show_lsof_flag; then
-    show_lsof "$dir_lsof" "${usuarios[@]}"
+    show_lsof "$dir_lsof" "${usuarios[@]}" 
 # Si se ha activado la bandera de mostrar los procesos de un usuario
 elif $show_user_flag; then
-  show_process_user "${usuarios[@]}"
+  show_process_user "${usuarios[@]}" 
 # Si no se ha activado ninguna bandera
 else 
   show_process_without_identifier_0
