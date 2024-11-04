@@ -2,28 +2,26 @@
 a
 b
 c
-9
+8
 A
 B
 C
 D
 E
-F
 S
 X
 Y
-20
+19
 A -> a
 B -> b
 C -> XD
 D -> BX
-E -> BX
-F -> XB
+E -> XB
 S -> AC
+S -> A
 S -> AE
-S -> AF
 S -> AB
-S -> AF
+S -> AE
 X -> AY
 X -> BY
 X -> a

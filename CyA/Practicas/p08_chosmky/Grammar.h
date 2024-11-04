@@ -16,7 +16,7 @@ class Grammar {
   void Write(const std::string& output_file);
   void SimplificarRepetidos();
   bool ComprobarProduccion(const std::string& production);
-  void ErrorExit();
+  void ErrorExit(const int error_code);
   int num_of_terminals_;
   std::set<char> terminals_;
   int num_of_non_terminals_;

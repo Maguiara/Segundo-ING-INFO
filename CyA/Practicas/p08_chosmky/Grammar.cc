@@ -50,9 +50,12 @@ void Grammar::Transform2CFN(const std::string& input_file, const std::string& ou
  * @param input_file 
  */
 void Grammar::LoadInformation(const std::string& input_file) {
+  //Abrir el archivo de entrada
   std::ifstream input_gramar(input_file);
+  if (!input_gramar.is_open()) ErrorExit(0);
   std::string especification_line;
   std::getline(input_gramar, especification_line);
+  // Leemos el numero de terminales para la gramatica
   num_of_terminals_ = std::stoi(especification_line);
   std::string grammar_alphabet;
   for (int i{0}; i < num_of_terminals_; i++) {
@@ -61,16 +64,17 @@ void Grammar::LoadInformation(const std::string& input_file) {
     terminals_.emplace(especification_line[0]);
   }
   valid_alphabet_ = grammar_alphabet;
-  if (valid_alphabet_.find('&')) {
-    std::cout << "El simbolo '&' no puede pertenecer al alfabeto" << std::endl;
-    exit(-1);
-  }
+  if (valid_alphabet_.find('&')) ErrorExit(1);
+  // Leemos el numero de no terminales para la gramatica
   std::getline(input_gramar, especification_line);
-   num_of_non_terminals_ = std::stoi(especification_line);
+  num_of_non_terminals_ = std::stoi(especification_line);
   for (int i{0}; i < num_of_non_terminals_; i++) {
     std::getline(input_gramar, especification_line);
+    if (islower(especification_line[0])) ErrorExit(3);
+    if (especification_line[0] == '&') ErrorExit(5);
     non_terminals_.emplace(especification_line[0]);
   }
+  // Leemos el numero de producciones para la gramatica
   std::getline(input_gramar, especification_line);
   num_of_productions_ = std::stoi(especification_line);
   for (int i{0}; i < num_of_productions_; i++) {
@@ -79,31 +83,20 @@ void Grammar::LoadInformation(const std::string& input_file) {
     char non_terminal;
     std::string production;
     aux >> non_terminal >> production;
-    if (non_terminals_.find(non_terminal) == non_terminals_.end()) {
-      std::cout << "El terminal: " << non_terminal << " no ha sido especificado" << std::endl;
-      exit(-1);
-    }
-    if (islower(non_terminal)) {
-      std::cout << "Un terminal no puede tener producciones." << std::endl;
-      exit(-1);
-    }
-    if (production == "&") {
-      std::cout << "No puede existir producciones unitarias o vacias" << std::endl;
-      exit(-1);
-    }
+    // Comprobaciones sobre las producciones
+    if (non_terminals_.find(non_terminal) == non_terminals_.end()) ErrorExit(2);
+    if (islower(non_terminal)) ErrorExit(3);
+    if (production == "&") ErrorExit(4);
+    if (production.size() == 1) ErrorExit(6);
     productions_.emplace(non_terminal, production);
   }
 }
 
 
 /**
- * @brief Generates a new non-terminal character that is not already in the set of non-terminals.
+ * @brief Genera un nuevo no terminal a partir de un terminal o un no terminal
  * 
- * This function takes a character as input and generates a new non-terminal character by 
- * incrementing the input character and ensuring that the new character is not already present 
- * in the set of non-terminals. The new non-terminal character is then added to the set.
- * 
- * @param c The input character from which to generate a new non-terminal.
+ * @param c Terminal o no terminal a partir del cual se generara el nuevo no terminal
  */
 char Grammar::GenerateNonTerminal(const char c) {
   char aux = toupper(c);
@@ -117,7 +110,10 @@ char Grammar::GenerateNonTerminal(const char c) {
 }
 
 
-
+/**
+ * @brief Primera parte del algoritmo de transformacion a FN de chomsky
+ * 
+ */
 void Grammar::PrimeraParte() {
   // Mapa para almacenar la correspondencia entre terminales y no terminales
   std::map<char, char> terminal_to_non_terminal;
@@ -191,9 +187,14 @@ void Grammar::SegundaParte() {
 
 
 
-
+/**
+ * @brief Escribe la gramatica en el archivo de salida
+ * 
+ * @param output_file 
+ */
 void Grammar::Write(const std::string& output_file) {
   std::ofstream output_grammar(output_file);
+  if (!output_grammar.is_open()) ErrorExit(7);
   output_grammar << num_of_terminals_  << std::endl;
   for (auto it = terminals_.begin(); it != terminals_.end(); it++) output_grammar << *it << std::endl;
   output_grammar << num_of_non_terminals_ << std::endl;
@@ -203,15 +204,58 @@ void Grammar::Write(const std::string& output_file) {
 }
 
 
-
-void Grammar::ErrorExit() {
-  // Luego lo acabo si me da tiempo
+/**
+ * @brief Funcion que recibe un codigo de error y muestra un mensaje de error
+ * 
+ * @param error_code 
+ */
+void Grammar::ErrorExit(const int error_code) {
+  switch (error_code) {
+    case 0:
+      std::cerr << "Error: No se puede abrir el archivo de entrada." << std::endl;
+      break;
+    case 1:
+      std::cerr << "Error: La cadena vacía '&' no está permitida en el alfabeto de la gramática." << std::endl;
+      break;
+    case 2:
+      std::cerr << "Error: Símbolo no terminal no encontrado en el conjunto de no terminales." << std::endl;
+      break;
+    case 3:
+      std::cerr << "Error: El símbolo terminal está en minúsculas." << std::endl;
+      break;
+    case 4:
+      std::cerr << "Error: La producción vacía no está permitida." << std::endl;
+      break;
+    case 5:
+      std::cerr << "Error: El símbolo '&' no puede ser un símbolo no terminal." << std::endl;
+      break;
+    case 6:
+      std::cerr << "Error: Producción unitaria no permitida." << std::endl;
+      break;
+    case 7:
+      std::cerr << "Error: No se puede abrir el archivo de salida." << std::endl;
+      break;
+    default:
+      std::cerr << "Error: Error desconocido." << std::endl;
+      break;
+  }
+  exit(-1);
 }
 
+/**
+ * @brief Funcion que simplifica las producciones repetidas
+ * 
+ */
 void Grammar::SimplificarRepetidos() {
-  // Mirar esto mañana
+  
 }
 
+/**
+ * @brief Comprueba si una producción ya existe en el conjunto de producciones.
+ * 
+ * @param production La producción a comprobar.
+ * @return true si la producción ya existe, false en caso contrario.
+ */
 bool Grammar::ComprobarProduccion(const std::string& production) {
   for (const auto& prod : productions_) {
     if (prod.second == production) 
@@ -219,6 +263,12 @@ bool Grammar::ComprobarProduccion(const std::string& production) {
   }
   return false;
 }
+
+// ############################//
+//  PRUEBAS QUE NO FUNCIONARON //
+// ############################//
+
+
   /** Investigar si se puede hacer esto y luego getlines 
   char simbol_of_alphabet;
   std::string alphabet;
