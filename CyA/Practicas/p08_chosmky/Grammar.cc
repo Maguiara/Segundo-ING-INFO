@@ -166,7 +166,7 @@ void Grammar::SegundaParte() {
       std::vector<char> new_non_terminals;
       // Creamos los no terminales necesarios ( m - 2 )
       for (long unsigned int i{0}; i < production.size() - 2; i++) {
-        non_terminal = GenerateNonTerminal(non_terminal);
+        non_terminal = GenerateNonTerminal('A');
         new_non_terminals.push_back(non_terminal);
       }
       // Añadir las nuevas producciones al mapa

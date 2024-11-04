@@ -5,25 +5,25 @@ c
 9
 A
 B
+C
+D
+E
+F
 S
-T
-U
-V
-W
 X
 Y
 20
 A -> a
 B -> b
-S -> AT
-S -> AV
-S -> AW
+C -> XD
+D -> BX
+E -> BX
+F -> XB
+S -> AC
+S -> AE
+S -> AF
 S -> AB
-S -> AW
-T -> XU
-U -> BX
-V -> BX
-W -> XB
+S -> AF
 X -> AY
 X -> BY
 X -> a
