@@ -133,10 +133,10 @@ void Grammar::PrimeraParte() {
             char new_non_terminal = GenerateNonTerminal(c);
             terminal_to_non_terminal[c] = new_non_terminal;
             // Añadir la nueva producción al conjunto de producciones
-            if (!ComprobarProduccion(std::string(1, c))) {
-              productions_.emplace(new_non_terminal, std::string(1, c));
-              num_of_productions_++;
-            }
+            std::string comprobacion = std::string(1, c);
+            
+            productions_.emplace(new_non_terminal, std::string(1, c));
+            num_of_productions_++;
           }
           // Remplazar el terminal c por el no terminal correspondiente
           new_production += terminal_to_non_terminal[c];
@@ -183,10 +183,12 @@ void Grammar::SegundaParte() {
   }
   // Add the new productions to the grammar
   for (const auto& prod : new_productions) {
-      productions_.emplace(prod.first, prod.second);
-      num_of_productions_++;
+    productions_.emplace(prod.first, prod.second);
+    num_of_productions_++;
   }
+  
 }
+
 
 
 
@@ -206,15 +208,17 @@ void Grammar::ErrorExit() {
   
 }
 
-
-bool Grammar::ComprobarProduccion(const std::string& production) {
-  
-  // Comprobar que la producción existe ya en el conjunto de producciones, si existe devuelve true
-  for (auto it = productions_.begin(); it != productions_.end(); it++) 
-  if (it->second == production) return true;
-  return false;
+void Grammar::SimplificarRepetidos() {
+  // Mirar esto mañana
 }
 
+bool Grammar::ComprobarProduccion(const std::string& production) {
+  for (const auto& prod : productions_) {
+    if (prod.second == production) 
+      return true;
+  }
+  return false;
+}
   /** Investigar si se puede hacer esto y luego getlines 
   char simbol_of_alphabet;
   std::string alphabet;

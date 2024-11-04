@@ -14,6 +14,7 @@ class Grammar {
   void PrimeraParte();
   void SegundaParte();
   void Write(const std::string& output_file);
+  void SimplificarRepetidos();
   bool ComprobarProduccion(const std::string& production);
   void ErrorExit();
   int num_of_terminals_;
