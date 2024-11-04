@@ -205,7 +205,7 @@ void Grammar::Write(const std::string& output_file) {
 
 
 void Grammar::ErrorExit() {
-  
+  // Luego lo acabo si me da tiempo
 }
 
 void Grammar::SimplificarRepetidos() {

@@ -4,6 +4,7 @@
 # Para añadir los identificadores de sesion 0 se usa -eo sid,pgid,pid,euser,tty,%mem,cmd, si no los quiero pongo -o
 PS_HEADER=$(ps -eo sid,pgid,pid,euser,tty,%mem,cmd --sort=euser | awk 'NR==1 {print $0}')
 PS_FOTO=$(ps -eo sid,pgid,pid,euser,tty,%mem,cmd --sort=euser)
+ACTUAL_USER=$(whoami)
 
 # Para imprimir respetando los saltos de linea
 #printf "%s\n" "$PS_FOTO" 
@@ -15,12 +16,17 @@ PS_FOTO=$(ps -eo sid,pgid,pid,euser,tty,%mem,cmd --sort=euser)
 ##FUNCIONES USADAS EN EL SCRIPT##
 # Funcion que muestra la ayuda del script
 show_help() {
-  echo "Uso: $0 [-h] [-z] [-u user] "
-  echo  "Opciones: "
-  echo "-h  Muestra la ayuda"
-  echo "-z  Muestra los procesos con identificador de sesion 0"
-  echo "-u user  Muestra los procesos del usuario indicado"
-  exit 0
+  cat << EOF
+    ========================================================
+    Uso: $0 [-h] [-z] [-u user1 ... userN] [-d dir]
+    ========================================================
+    "Opciones: 
+    -h                  Muestra la ayuda
+    -z                  Muestra los procesos con identificador de sesion 0
+    -u user1 ... userN  Muestra los procesos de la lista de usuarios indicados
+    -d dir              Muestra los procesos que tienen archivos abiertos en un directorio especificado
+EOF
+    exit 0
 }
 
 # Funcion que muestra los procesos con identificador de sesion 0
@@ -29,33 +35,42 @@ show_indentifier_0() {
     if [[ -n "$1" ]]; then
       for indentifier_user in "${usuarios[@]}"; do
         if id "$indentifier_user" &>/dev/null; then
-          echo "Procesos con identificador de sesion 0 del usuario $indentifier_user"
+          echo "Todos los procesos (incluido sesion 0) del usuario $indentifier_user"
           echo
           printf "%s\n" "$PS_HEADER"
           #Si no es mostrar solo los procesos con identificador de sesion 0 del usuario se quita la comparacion de $1
-          printf "%s\n" "$PS_FOTO" | awk -v user_awk="$indentifier_user" '$1 == 0 && $4 == user_awk {print $0}'
-          echo
+          #awk '$1 == "0" { if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print }'
+          printf "%s\n" "$PS_FOTO" | awk -v user_awk="$indentifier_user" '$4 == user_awk { if (length($0) > 100) $0 = substr($0, 1, 97) "..."; print $0}'
+          if [[ $show_num_process_flag ]]; then
+            printf "%s\n" "$PS_FOTO" | awk 'END {print "El numero de lineas es: " NR}'
+          fi
         else 
           error_exit "El usuario $indentifier_user no existe"
         fi
       done
     else
-      echo "Procesos con identificador de sesion 0"
+      echo "Todos los procesos (incluido sesion 0)"
       echo
-      printf "%s\n" "$PS_HEADER"
       #Si no es mostrar solo los procesos con identificador de sesion 0 se quita la comparacion de $1
-      printf "%s\n" "$PS_FOTO" | awk '$1 == 0 {print $0}'
+      printf "%s\n" "$PS_FOTO" | awk '{if (length($0) > 100) $0 = substr($0, 1, 97) "...";  print $0}'
+      if [[ $show_num_process_flag ]]; then
+      printf "%s\n" "$PS_FOTO" | awk 'END {print "El numero de lineas es: " NR}'
+      fi
     fi
-  #else 
-    #error_exit "El usuario $1 no existe"
-  #fi
+  exit 0
 }
 
 # Funcion que muestra los procesos sin identidicador de sesion 0
 show_process_without_identifier_0() {
   echo "Procesos sin identificador de sesion 0"
   echo
-  printf "%s\n" "$PS_FOTO" | awk '$1 != 0 {print $0}'
+  printf "%s\n" "$PS_HEADER"
+  printf "%s\n" "$PS_FOTO" | awk -v actual_user="$ACTUAL_USER" '$1 != 0 && $4 == actual_user {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}'
+
+  if [[ $show_num_process_flag ]]; then 
+    printf "%s\n" "$PS_FOTO" | awk -v actual_user="$ACTUAL_USER" '$1 != 0 && $4 == actual_user {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}'| awk 'END {print "El numero de lineas es: " NR}'
+  fi
+  exit 0
 }
 
 # Funcion que muestra los procesos de un usuario
@@ -67,12 +82,19 @@ show_process_user() {
   for show_user in "${usuarios[@]}"; do
     #Comprobacion de si el usuario existe
     if id "$show_user" &>/dev/null; then
-      printf "%s\n" "$PS_FOTO" | awk -v user_awk="$show_user" '$4 == user_awk {print $0}'
+      echo
+      echo "Todos los procesos del usuario $show_user"
+      echo
+      printf "%s\n" "$PS_FOTO" | awk -v user_awk="$show_user" '$4 == user_awk {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}'
+      if [[ $show_num_process_flag ]]; then
+       printf "%s\n" "$PS_FOTO" | awk -v user_awk="$show_user" '$4 == user_awk {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}' | awk 'END {print "El numero de lineas es: " NR}'
+      fi
     else
       #Mensaje de error si el usuario no existe
       error_exit "El usuario $show_user no existe"
     fi
   done
+  exit 0
 }
 
 # Funcion que muestra los procesos con lsof
@@ -82,25 +104,32 @@ show_lsof() {
   #Comprobacion de si el directorio existe
   if [ -d "$dir_lsof" ]; then
     #Bucle para recorrer los usuarios
-    if [[ -n "$2" ]]; then
+    if show_user_flag; then
       for show_lsof_user in "${usuarios[@]}"; do
         #Comprobacion de si el usuario existe
         if id "$show_lsof_user" &>/dev/null; then
           #Print de los procesos con lsof
-          lsof -u $show_lsof_user $dir_lsof | awk -v user_awk="$show_lsof_user" '$3 == user_awk {print $0}'
+          lsof -u "$show_lsof_user" "$dir_lsof" | awk -v user_awk="$show_lsof_user" '$3 == user_awk {print $0}'
+          if $show_num_process_flag; then
+            printf "%s\n" "$PS_FOTO" | awk 'END {print "El numero de lineas es: " NR}'
+          fi
         else
           #Mensaje de error si el usuario no existe
-          error_exit "El usuario $show_lsof_user no existe"
+          error_exit "El usuario "$show_lsof_user" no existe"
         fi
       done
     else 
       #Print de los procesos con lsof
-      lsof $dir_lsof
+      lsof +D "$dir_lsof" | awk 'END {print NR} { if (length($0) > 100) $0 = substr($0, 1, 98) "..." ; print $0}'
+      if $show_num_process_flag; then
+        printf "%s\n" "$PS_FOTO" | awk 'END {print "El numero de lineas es: " NR}'
+      fi
     fi
   else
     #Mensaje de error si el directorio no existe
     error_exit "El directorio $dir_lsof no existe"
   fi
+  exit 0
 }
 
 #Funcion para mostrar un mensaje de error y salir
@@ -117,13 +146,14 @@ show_help_flag=false
 show_identifier_flag=false
 show_user_flag=false
 show_lsof_flag=false
+show_num_process_flag=false
 user_arg=""
 dir_lsof=""
 # Array para almacenar los usuarios
 usuarios=()
 
 # Funcion para gestionar las opciones del script
-while getopts ":hdzu:" option; do
+while getopts ":hzd:u:n" option; do
   case $option in 
     h)
       # Activar el flag de mostrar la ayuda
@@ -139,15 +169,16 @@ while getopts ":hdzu:" option; do
       # Desplazar a la siguiente posición
       shift 
       # Capturar todos los argumentos que siguen hasta que encuentres otro flag o se terminen los argumentos
-      while [[ "$1" != -* && "$1" != "" ]]; do
-          usuarios+=("$1")
-          shift
-      done
+      usuarios=("$@")
       ;;
     d)
       # Activar el flag de mostrar los procesos con lsof
       show_lsof_flag=true
       dir_lsof="$2"
+      ;;
+    n)
+      #Activar el flag de procecos en la tabla
+      show_num_process_flag=true
       ;;
     \?)
     # Si se introduce una opcion no valida
@@ -163,26 +194,32 @@ done
 ############################################################################################################
 ##CUERPO DEL SCRIPT##
 
+# Debug
+echo "Bandera para mostrar la ayuda: $show_help_flag"
+echo "Bandera para el numero de procesos: $show_num_process_flag"
+echo "Bandera para los procesos 0: $show_identifier_flag"
+echo "Bandera para los usuarios: $show_user_flag"
+echo "Bandera para lsof: $show_lsof_flag"
+echo "Direcctorio para lsof: $dir_lsof"
+echo "Usuarios especificados: ${usuarios[@]}"
+exit 0
+
 # Si se ha activado la bandera de ayuda, se muestra la ayuda
 if $show_help_flag; then
   show_help
 fi
 
-if $show_identifier_flag && $show_user_flag; then
-  show_indentifier_0 "${usuarios[@]}"
 
-elif $show_lsof_flag && $show_user_flag; then
-  show_lsof "$dir_lsof" "${usuarios[@]}"
-
+# Si se ha activado la bandera de mostrar los procesos con identificador de sesion 0
+if $show_identifier_flag; then
+    show_indentifier_0 "${usuarios[@]}" 
+# Si se ha activado la bandera de mostrar los procesos con lsof
 elif $show_lsof_flag; then
-  show_lsof "$dir_lsof"
-
-elif $show_identifier_flag; then
-  show_indentifier_0
-
+    show_lsof "$dir_lsof" "${usuarios[@]}"
+# Si se ha activado la bandera de mostrar los procesos de un usuario
 elif $show_user_flag; then
   show_process_user "${usuarios[@]}"
-  
+# Si no se ha activado ninguna bandera
 else 
   show_process_without_identifier_0
 fi
