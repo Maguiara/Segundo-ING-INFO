@@ -2,21 +2,26 @@
 a
 b
 c
-7
+9
 A
 B
 S
 T
 U
+V
+W
 X
 Y
-16
-S -> ABX
-S -> AXB
-S -> AB
+18
 S -> AT
+S -> AV
+S -> AW
+S -> AB
+S -> AW
 T -> XU
 U -> BX
+V -> BX
+W -> XB
 X -> AY
 X -> BY
 X -> a

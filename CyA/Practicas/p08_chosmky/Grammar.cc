@@ -117,26 +117,6 @@ char Grammar::GenerateNonTerminal(const char c) {
 }
 
 
-//void Grammar::PrimeraParte() {
-//  //Leemos todas las producciones y las modificamos en caso de encontrar una prod. > 1 que no sea una cadena de no terminales
-//  for (auto it = productions_.begin(); it != productions_.end(); it++) {
-//    std::string production = it->second;
-//    if (production.size() > 1) { // S -> aXbX -> S -> AXBX
-//    //este primer bucle solo cambia los terminales por no terminales
-//    std::set<char> find_terminals;
-//    std::cout << "Produccion: " << production << std::endl;
-//      for (char& c : production) {
-//        if(islower(c)) {
-//          std::cout << "Terminal: " << c << std::endl;
-//          find_terminals.emplace(c);
-//        }
-//      }
-//
-//      
-//    std::cout << "Produccion despues de los cambios: " << production << std::endl;
-//    }
-//  } 
-//}
 
 void Grammar::PrimeraParte() {
   // Mapa para almacenar la correspondencia entre terminales y no terminales
@@ -178,48 +158,36 @@ void Grammar::PrimeraParte() {
  */
 void Grammar::SegundaParte() {
   std::map<char, std::string> new_productions;
-
+  // Iterar sobre las producciones y dividirlas en producciones de dos no terminales
   for (auto it = productions_.begin(); it != productions_.end(); ++it) {
     std::string production = it->second;
     if (production.size() >= 3) {
       char non_terminal = it->first;
       std::vector<char> new_non_terminals;
-      bool is_even = production.size() % 2 == 0;
-      // Creamos nuevos no terminales para las producciones
-      // 
-      if(is_even) {
-        for (long unsigned int i = 0; i < production.size(); i += 2) {
-          char new_non_terminal = GenerateNonTerminal(non_terminal);
-          new_non_terminals.push_back(new_non_terminal);
-          new_productions[new_non_terminal] = std::string(1, production[i]) + production[i + 1];
-        }
-      } else {
-        for (long unsigned int i = 0; i < production.size() - 2; i += 2) {
-          char new_non_terminal = GenerateNonTerminal(non_terminal);
-          new_non_terminals.push_back(new_non_terminal);
-          new_productions[new_non_terminal] = std::string(1, production[i]) + production[i + 1];
-        }
+      // Creamos los no terminales necesarios ( m - 2 )
+      for (long unsigned int i{0}; i < production.size() - 2; i++) {
+        non_terminal = GenerateNonTerminal(non_terminal);
+        new_non_terminals.push_back(non_terminal);
       }
-
-      // Replace the production A → B1B2 . . . Bm with the new productions
-      new_productions[non_terminal] = std::string(1, production[0]) + new_non_terminals[0]; // S -> AC
-      for (long unsigned int i = 0; i < new_non_terminals.size() - 1; ++i) {
-        new_productions[new_non_terminals[i]] = std::string(1, production[i + 1]) + new_non_terminals[i + 1];
+      // Añadir las nuevas producciones al mapa
+      non_terminal = it->first;
+      for (long unsigned int i{0}; i < production.size() - 2; i++) {
+        new_productions[non_terminal] = std::string(1, production[i]) + new_non_terminals[i];
+        non_terminal = new_non_terminals[i];
       }
-      new_productions[new_non_terminals.back()] = std::string(1, production[production.size() - 2]) + std::string(1, production.back());
-
-      // Remove the original production
-      it = productions_.erase(it);
-      --it;
+      // Añadir la última producción
+      new_productions[new_non_terminals[new_non_terminals.size()- 1]] = std::string(1, production[production.size() - 2]) + std::string(1, production[production.size() - 1]);
+      // Actualizar la producción original con los no terminales
+        it->second = std::string(1, production[0]) + new_non_terminals[0];
     }
   }
-
   // Add the new productions to the grammar
   for (const auto& prod : new_productions) {
-    productions_.emplace(prod.first, prod.second);
-    num_of_productions_++;
+      productions_.emplace(prod.first, prod.second);
+      num_of_productions_++;
   }
 }
+
 
 
 void Grammar::Write(const std::string& output_file) {
@@ -256,3 +224,26 @@ bool Grammar::ComprobarProduccion(const std::string& production) {
     alphabet += simbol_of_alphabet; 
   }
   **/ 
+
+
+ // Primer prototipo de la funcion PrimeraParte
+ //void Grammar::PrimeraParte() {
+//  //Leemos todas las producciones y las modificamos en caso de encontrar una prod. > 1 que no sea una cadena de no terminales
+//  for (auto it = productions_.begin(); it != productions_.end(); it++) {
+//    std::string production = it->second;
+//    if (production.size() > 1) { // S -> aXbX -> S -> AXBX
+//    //este primer bucle solo cambia los terminales por no terminales
+//    std::set<char> find_terminals;
+//    std::cout << "Produccion: " << production << std::endl;
+//      for (char& c : production) {
+//        if(islower(c)) {
+//          std::cout << "Terminal: " << c << std::endl;
+//          find_terminals.emplace(c);
+//        }
+//      }
+//
+//      
+//    std::cout << "Produccion despues de los cambios: " << production << std::endl;
+//    }
+//  } 
+//}
