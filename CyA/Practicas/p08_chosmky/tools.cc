@@ -1,3 +1,14 @@
+/**
+ * @file tools.cc
+ * @author Marco Aguiar Álvarez
+ * @brief Archivo que contiene la implementacion de las funciones que velan por el buen uso del programa
+ * @e alu0101620961@ull.edu.es
+ * 
+ * @copyright Copyright (c) 2024
+ * 
+ */
+
+
 #include "tools.h"
 
 

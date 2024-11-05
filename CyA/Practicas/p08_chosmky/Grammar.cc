@@ -2,29 +2,28 @@
 
 /**
  * @file Grammar.cc
- * @brief Implementation of the Grammar class for transforming grammars into Chomsky Normal Form (CNF).
+ * @brief Implementación de la clase Grammar para transformar gramáticas a la Forma Normal de Chomsky (CNF).
  * 
- * This file contains the implementation of the Grammar class, which provides methods to load grammar
- * information from a file, transform the grammar into Chomsky Normal Form (CNF), and write the transformed
- * grammar to an output file.
+ * Este archivo contiene la implementación de la clase Grammar, que proporciona métodos para cargar información
+ * de la gramática desde un archivo, transformar la gramática a la Forma Normal de Chomsky (CNF) y escribir la
+ * gramática transformada en un archivo de salida.
  * 
- * The main methods in this file include:
- * - Transform2CFN: Transforms the input grammar into CNF and writes it to an output file.
- * - LoadInformation: Loads grammar information from an input file.
- * - GenerateNonTerminal: Generates a new non-terminal symbol.
- * - PrimeraParte: First part of the algorithm for transforming the grammar into CNF.
- * - SegundaParte: Second part of the algorithm for transforming the grammar into CNF.
- * - Write: Writes the transformed grammar to an output file.
+ * Los métodos principales en este archivo incluyen:
+ * - Transform2CFN: Transforma la gramática de entrada a CNF y la escribe en un archivo de salida.
+ * - LoadInformation: Carga la información de la gramática desde un archivo de entrada.
+ * - GenerateNonTerminal: Genera un nuevo símbolo no terminal.
+ * - PrimeraParte: Primera parte del algoritmo para transformar la gramática a CNF.
+ * - SegundaParte: Segunda parte del algoritmo para transformar la gramática a CNF.
+ * - Write: Escribe la gramática transformada en un archivo de salida.
  * 
- * The Grammar class uses several private member variables to store the grammar's terminals, non-terminals,
- * and productions.
- * 
- * @note The implementation assumes that the input grammar file is correctly formatted.
- * @note The implementation does not handle unit productions or empty productions.
+ * @note La implementación asume que el archivo de la gramática de entrada está correctamente formateado.
+ * @note La implementación no maneja producciones unitarias ni producciones vacías.
  * 
  * @see Grammar.h
  * @see tools.h
  */
+
+
 #include "Grammar.h"
 #include "tools.h"
 
@@ -40,6 +39,8 @@ void Grammar::Transform2CFN(const std::string& input_file, const std::string& ou
   PrimeraParte();
   SegundaParte();
   Write(output_file);
+  if (CompararSalida(input_file, output_file)) std::cout << "La gramatica ya estaba en forma normal de Chomsky" << std::endl;
+  else std::cout << "El archivo no estaba en forma normal de Chomsky" << std::endl;
 }
 
 
@@ -84,10 +85,22 @@ void Grammar::LoadInformation(const std::string& input_file) {
     std::string production;
     aux >> non_terminal >> production;
     // Comprobaciones sobre las producciones
-    if (non_terminals_.find(non_terminal) == non_terminals_.end()) ErrorExit(2);
-    if (islower(non_terminal)) ErrorExit(3);
-    if (production == "&") ErrorExit(4);
-    if (production.size() == 1) ErrorExit(6);
+    if (non_terminals_.find(non_terminal) == non_terminals_.end()) {
+      std::cout << "Error en la produccion: " << non_terminal << " -> " << production << std::endl;
+      ErrorExit(2);
+    }
+    if (islower(non_terminal)) {
+      std::cout << "Error en la produccion: " << non_terminal << " -> " << production << std::endl;
+      ErrorExit(3);
+    }
+    if (production == "&") {
+      std::cout << "Error en la produccion: " << non_terminal << " -> " << production << std::endl;
+      ErrorExit(4);
+    }
+    if (production.size() == 1 && isupper(production[0])) {
+      std::cout << "Error en la produccion: " << non_terminal << " -> " << production << std::endl;
+      ErrorExit(6);
+    } 
     productions_.emplace(non_terminal, production);
   }
 }
@@ -200,8 +213,30 @@ void Grammar::Write(const std::string& output_file) {
   output_grammar << num_of_non_terminals_ << std::endl;
   for (auto it = non_terminals_.begin(); it != non_terminals_.end(); it++) output_grammar << *it << std::endl;
   output_grammar << num_of_productions_ << std::endl;
-  for (auto it = productions_.begin(); it != productions_.end(); it++) output_grammar << it->first << " -> " << it->second << std::endl;
+  for (auto it = productions_.begin(); it != productions_.end(); it++) output_grammar << it->first << " " << it->second << std::endl;
+
 }
+
+
+/**
+ * @brief Compara si el archivo especificado por el usuario ya estaba en FNC
+ * 
+ * @param input_file 
+ * @param output_file 
+ * @return true 
+ * @return false 
+ */
+bool Grammar::CompararSalida(const std::string& input_file, const std::string& output_file) {
+  std::ifstream input(input_file);
+  std::ifstream output(output_file);
+  std::string input_line, output_line;
+
+  while (std::getline(input, input_line) && std::getline(output, output_line)) {
+    if (input_line != output_line) return false;
+  }
+  return true;
+}
+
 
 
 /**
@@ -240,14 +275,6 @@ void Grammar::ErrorExit(const int error_code) {
       break;
   }
   exit(-1);
-}
-
-/**
- * @brief Funcion que simplifica las producciones repetidas
- * 
- */
-void Grammar::SimplificarRepetidos() {
-  
 }
 
 /**
