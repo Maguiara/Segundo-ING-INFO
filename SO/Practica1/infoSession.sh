@@ -87,7 +87,7 @@ show_process_user() {
       echo
       printf "%s\n" "$PS_FOTO" | awk -v user_awk="$show_user" ' $1 != 0 && $4 == user_awk {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}'
       if [[ $show_num_process_flag == true ]]; then
-       printf "%s\n" "$PS_FOTO" | awk -v user_awk="$show_user" '$1 != 0 && $4 == user_awk {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}' | awk 'END {print "El numero de lineas es: " NR}'
+        printf "%s\n" "$PS_FOTO" | awk -v user_awk="$show_user" '$1 != 0 && $4 == user_awk {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}' | awk 'END {print "El numero de lineas es: " NR}'
       fi
     else
       #Mensaje de error si el usuario no existe
@@ -102,32 +102,31 @@ show_lsof() {
   local dir_lsof="$1"
   local show_lsof_user=""
   #Comprobacion de si el directorio existe
-  if [ -d "$dir_lsof" ]; then
-    #Bucle para recorrer los usuarios
-    if [[ $show_user_flag == true ]]; then
-      for show_lsof_user in "${usuarios[@]}"; do
-        #Comprobacion de si el usuario existe
-        if id "$show_lsof_user" &>/dev/null; then
-          #Print de los procesos con lsof
-          lsof +d "$dir_lsof" | awk -v user_awk="$show_lsof_user" '$3 == user_awk {print $0}'
-          if [[ $show_num_process_flag == true ]]; then
-              echo "si"
-          fi
-        else
-          #Mensaje de error si el usuario no existe
-          error_exit "El usuario "$show_lsof_user" no existe"
-        fi
-      done
-    else 
-      #Print de los procesos con lsof
-      lsof +d "$dir_lsof" | awk '{ if (length($0) > 100) $0 = substr($0, 1, 98) "..." ; print $0}'
-      if $show_num_process_flag; then
-      lsof +d "$dir_lsof" | awk '{ if (length($0) > 100) $0 = substr($0, 1, 98) "..." ; print $0}' | awk 'END {print "El numero de lineas es: " NR}'
-      fi
-    fi
-  else
-    #Mensaje de error si el directorio no existe
+  if [ ! -d "$dir_lsof" ]; then
     error_exit "El directorio $dir_lsof no existe"
+  fi
+  # Si se activo la bandera de mostrar los procesos de un usuario
+  if [[ $show_user_flag == true ]]; then
+    for show_lsof_user in "${usuarios[@]}"; do
+      #Comprobacion de si el usuario existe
+      if id "$show_lsof_user" &>/dev/null; then
+        #Print de los procesos con lsof
+        lsof +d "$dir_lsof" | awk -v user_awk="$show_lsof_user" '$3 == user_awk {print $0}'
+        if [[ $show_num_process_flag == true ]]; then
+          # Si se activa la bandera de procesos en la tabla
+          lsof +d "$dir_lsof" | awk -v user_awk="$show_lsof_user" '$3 == user_awk {print $0}' | awk 'END {print "El numero de lineas es: " NR}'
+        fi
+      else
+      #Mensaje de error si el usuario no existe
+      error_exit "El usuario "$show_lsof_user" no existe"
+    fi
+    done
+  else 
+    #Print de los procesos con lsof
+    lsof +d "$dir_lsof" | awk '{ if (length($0) > 100) $0 = substr($0, 1, 98) "..." ; print $0}'
+    if $show_num_process_flag; then
+    lsof +d "$dir_lsof" | awk '{ if (length($0) > 100) $0 = substr($0, 1, 98) "..." ; print $0}' | awk 'END {print "El numero de lineas es: " NR}'
+    fi
   fi
   exit 0
 }
@@ -149,12 +148,14 @@ show_identifier_flag=false
 show_user_flag=false
 show_lsof_flag=false
 show_num_process_flag=false
+show_terminal_flag=false
 user_arg=""
 dir_lsof=""
 # Array para almacenar los usuarios
 usuarios=()
 
 # Funcion para gestionar las opciones del script
+# $# es el numero de argumentos
 while [[ $# -gt 0 ]]; do
   # Capturar la opcion
   option=$1
@@ -173,6 +174,7 @@ while [[ $# -gt 0 ]]; do
       show_user_flag=true
       shift
       # Guardar los usuarios en un array
+      # =~ sirve para comparar una expresion regular
       while [[ $# -gt 0 && ! $1 =~ ^- ]]; do
         usuarios+=("$1")
         shift
@@ -189,6 +191,10 @@ while [[ $# -gt 0 ]]; do
     -n)
       #Activar el flag de procecos en la tabla
       show_num_process_flag=true
+      shift
+      ;;
+    -t)
+      show_terminal_flag=true
       shift
       ;;
     *)
@@ -212,19 +218,27 @@ done
 #echo "Bandera para lsof: $show_lsof_flag"
 #echo "Direcctorio para lsof: $dir_lsof"
 #echo "Usuarios especificados: ${usuarios[@]}"
-#exit 0
 
+usuarios_prueba=( "root" "usuario" )
+ps -eo sid,pgid,pid,euser,tty,%mem,cmd --sort=euser | awk -v user_awk="${usuarios_prueba}" ' $4 == user_awk {if (length($0) > 100) $0 = substr($0, 1, 97) "..."; print $0}'
+
+echo "usuarios_prueba: ${usuarios_prueba[@]}"
+exit 0
+
+# Estas opciones "son las mas importantes", por ello si se activan se ejecutaran en este orden
+# utilizando en la funcion el resto de banderas en caso de necestiarlas
 
 # Si se ha activado la bandera de mostrar los procesos con identificador de sesion 0
 if $show_identifier_flag; then
-    show_indentifier_0 "${usuarios[@]}" 
+    show_indentifier_0 
 # Si se ha activado la bandera de mostrar los procesos con lsof
 elif $show_lsof_flag; then
-    show_lsof "$dir_lsof" "${usuarios[@]}" 
+    show_lsof "$dir_lsof" 
 # Si se ha activado la bandera de mostrar los procesos de un usuario
 elif $show_user_flag; then
-  show_process_user "${usuarios[@]}" 
+  show_process_user 
 # Si no se ha activado ninguna bandera
 else 
   show_process_without_identifier_0
 fi
+
