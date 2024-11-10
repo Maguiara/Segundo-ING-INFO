@@ -3,8 +3,10 @@
 # Variables constantes usadas en el script
 # Para añadir los identificadores de sesion 0 se usa -eo sid,pgid,pid,euser,tty,%mem,cmd, si no los quiero pongo -o
 PS_HEADER=$(ps -eo sid,pgid,pid,euser,tty,%mem,cmd --sort=euser | awk 'NR==1 {print $0}')
-PS_FOTO=$(ps -eo sid,pgid,pid,euser,tty,%mem,cmd --sort=euser) 
+PS_FOTO=$(ps -eo sid,pgid,pid,euser,tty,%mem,cmd --sort=euser --no-headers)
 ACTUAL_USER=$(whoami)
+# En la practica: ACTUAL_USER=$(alu0101+)
+
 # Para imprimir respetando los saltos de linea
 #printf "%s\n" "$PS_FOTO" 
 
@@ -19,18 +21,61 @@ show_help() {
     =============================================================
     Uso: $0 [-h] [-z] [-u user1 ... userN] [-d dir]
     =============================================================
-    Opciones: 
-      -h                  Muestra la ayuda
-      -z                  Muestra los procesos con identificador de sesion 0
-      -u user1 ... userN  Muestra los procesos de la lista de usuarios indicados
-      -d dir              Muestra los procesos que tienen archivos abiertos en un directorio especificado
-      -t                  Muestra los procesos que tienen una terminal asociada
+    Opciones:
+
+      -e                  Muestra los procesos en formato tabla, si se activa:
+        -h                  Muestra la ayuda
+        -z                  Muestra los procesos con identificador de sesion 0
+        -u user1 ... userN  Muestra los procesos de la lista de usuarios indicados
+        -d dir              Muestra los procesos que tienen archivos abiertos en un directorio especificado
+        -n                  Muestra el numero de procesos en la tabla
+        -t                  Muestra los procesos que tienen una terminal asociada
+        -f file             Guarda la salida en un archivo
+        -sm                 Ordemaniento por porcentaje de memoria consumida por el proceso
+        -r                  Revierte cualquier tipo de ordenamiento aplicado
+      
+      en caso de que no se utilice -e:
+        -sg                 Ordenamiento por el numero de grupos de procesos en cada sesion (de menos a mas)
+    ========================================================================================================
+
 EOF
     exit 0
 }
 
+# Funcion que filtra los procesos con lsof
+filter_lsof() {
+  local dir_lsof=$1
+  # Comprobamos que se haya pasado un directorio
+  if [ $dir_lsof == "" ]; then
+    error_exit "La opcion -d requiere un directorio"
+  fi
+  # Comprobamos que el directorio exista
+  if [ ! -d "$dir_lsof" ]; then
+    error_exit "El directorio $dir_lsof no existe"
+  fi
+
+
+  pids_lsof=$(lsof +d $dir_lsof | tail -n+2 | awk '{print $2}')
+  # Filtramos PS por los pids obtenidos con lsof
+  PS_FOTO=$(echo "$PS_FOTO" | awk -v pids_lsof="$pids_lsof" '
+    BEGIN {
+      #Tranformamos la lista de pids pasada por lsof en un array
+      #Especificamos el delimitador de la lista es un newline
+      split(pids_lsof, lista_pids, "\n");
+    }
+
+    {
+      for (i = 0; i < length(lista_pids); i++) {
+        if ($3 == lista_pids[i]) {
+          if (length($0) > 100) $0 = substr($0, 1, 97) "..." ;
+          print $0;
+        }
+      }
+    }')
+}
+
 # Funcion que muestra los procesos sin identidicador de sesion 0
-show_process_without_identifier_0() {
+filter_identifier_0() {
   # Filtra PS-FOTO para que se muestren solo los procesos que no tienen identificador 0
   PS_FOTO=$(echo "$PS_FOTO" | awk '$1 != 0 {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}' )
 }
@@ -41,74 +86,77 @@ filter_terminal() {
 }
 
 # Funcion que muestra los procesos de un usuario
-show_process_user() {
-  local show_user=""
-  local PS_FILTRADO=()
-  #Print de las cabezeras
-  printf "%s\n" "$PS_HEADER"
-  #Bucle para recorrer los usuarios
-  for show_user in "${usuarios[@]}"; do
-    #Comprobacion de si el usuario existe
-    if id "$show_user" &>/dev/null; then
-      echo
-      echo "Todos los procesos del usuario $show_user"
-      echo
-      if [[ $imprimir_archivo_flag == true ]]; then
-        echo "$PS_FOTO" | awk -v user_awk="$show_user" '$4 == user_awk {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}' > "$user_file"
-      else 
-        printf "%s\n" "$PS_FOTO" | awk -v user_awk="$show_user" '$4 == user_awk {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}'
-      fi
+filter_user() {
+  # Comprobamos que se haya pasado al menos un usuario
+  if [ ${#usuarios[@]} -eq 0 ]; then
+    error_exit "La opcion -u requiere al menos un usuario"
+  fi
+  PS_FOTO=$(echo "$PS_FOTO" | awk -v usuarios="${usuarios[*]}" '
+    BEGIN {
+      #Tranformamos la lista de usuarios pasada por linea de comandos en un array
+      split(usuarios, lista_usuarios, " ");
+    }
 
-      if [[ $show_num_process_flag == true ]]; then
-        printf "%s\n" "$PS_FOTO" | awk -v user_awk="$show_user" '$4 == user_awk {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}' | awk 'END {print "El numero de lineas es: " NR}'
-      fi
-    else
-      #Mensaje de error si el usuario no existe
-      error_exit "El usuario $show_user no existe"
-    fi
-  done
+    {
+      for (i = 0; i < length(lista_usuarios); i++) {
+        if ($4 == lista_usuarios[i]) {
+          if (length($0) > 100) $0 = substr($0, 1, 97) "..." ;
+          print $0;
+        }
+      }
+    }')
 }
 
-# Funcion que muestra los procesos con lsof
-show_lsof() {
-  local dir_lsof="$1"
-  local show_lsof_user=""
-  #Comprobacion de si el directorio existe
-  if [ ! -d "$dir_lsof" ]; then
-    error_exit "El directorio $dir_lsof no existe"
-  fi
-  # Si se activo la bandera de mostrar los procesos de un usuario
-  if [[ $show_user_flag == true ]]; then
-    for show_lsof_user in "${usuarios[@]}"; do
-      #Comprobacion de si el usuario existe
-      if id "$show_lsof_user" &>/dev/null; then
-        #Print de los procesos con lsof
-        lsof +d "$dir_lsof" | awk -v user_awk="$show_lsof_user" '$3 == user_awk {print $0}'
-        if [[ $show_num_process_flag == true ]]; then
-          # Si se activa la bandera de procesos en la tabla
-          lsof +d "$dir_lsof" | awk -v user_awk="$show_lsof_user" '$3 == user_awk {print $0}' | awk 'END {print "El numero de lineas es: " NR}'
-        fi
-      else
-      #Mensaje de error si el usuario no existe
-      error_exit "El usuario "$show_lsof_user" no existe"
-    fi
-    done
-  else 
-    #Print de los procesos con lsof
-    lsof +d "$dir_lsof" | awk '{ if (length($0) > 100) $0 = substr($0, 1, 98) "..." ; print $0}'
-    if $show_num_process_flag; then
-    lsof +d "$dir_lsof" | awk '{ if (length($0) > 100) $0 = substr($0, 1, 98) "..." ; print $0}' | awk 'END {print "El numero de lineas es: " NR}'
-    fi
-  fi
+# Funcion que muestra los procesos del usuario actual
+filter_actual_user() {
+  PS_FOTO=$(echo "$PS_FOTO" | awk -v usuario_actual="$ACTUAL_USER" '$4 == usuario_actual {if (length($0) > 100) $0 = substr($0, 1, 97) "..." ; print $0}')
 }
-
-
-
 
 #Funcion para mostrar un mensaje de error y salir
 error_exit() {
     echo "$1" 1>&2
     exit 1
+}
+
+#Funcion para filtrar los procesos por modo de sesion
+filtros_modo_sesion() {
+  # Filtra PS_FOTO por los procesos con o sin identidicador 0
+
+  if ! $show_identifier_flag; then
+    filter_identifier_0
+  fi
+
+  # Filtra PS_FOTO por los procesos que tienen una terminal asociada
+  if $show_terminal_flag; then
+    filter_terminal
+  fi
+
+  # Si se activa muestra todos los procesos del usuario especificado, si no muestra PS_FOTO filtrado sin mas
+  if $show_user_flag; then
+    filter_user
+  else 
+    filter_actual_user
+  fi
+
+  # Si se activa busca los procesos de un directorio especificado
+  if $show_lsof_flag; then
+    filter_lsof "$dir_lsof" 
+  fi
+
+  if $imprimir_archivo_flag; then
+    echo "$PS_HEADER" > "$user_file"
+    echo "$PS_FOTO" >> "$user_file"
+    if $show_num_process_flag; then
+      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)" >> "$user_file"
+    fi
+  else
+    echo "$PS_HEADER"
+    echo "$PS_FOTO"
+    if $show_num_process_flag; then
+      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)"
+    fi
+  fi
+
 }
 
 ############################################################################################################
@@ -151,8 +199,13 @@ while [[ $# -gt 0 ]]; do
       # Guardar los usuarios en un array
       # =~ sirve para comparar una expresion regular
       while [[ $# -gt 0 && ! $1 =~ ^- ]]; do
-        usuarios+=("$1")
+      # comprobacion de que exista el usuario
+        if id "$1" &>/dev/null; then
+          usuarios+=("$1")
         shift
+        else
+          error_exit "El usuario $1 no existe"
+        fi
       done
       ;;
     -d)
@@ -205,116 +258,17 @@ done
 #echo "Usuarios especificados: ${usuarios[@]}"
 #echo "Bandera de guaradar en archivo: $imprimir_archivo_flag"
 #echo "Archivo= $user_file"
-#exit 0
 
 
 if $modo_ps_flag; then
-  # Filtra PS_FOTO por los procesos con o sin identidicador 0
-  if [[ $show_identifier_flag == false ]]; then
-    show_process_without_identifier_0
-  fi
-  # Filtra PS_FOTO por los procesos que tienen una terminal asociada
-  if $show_terminal_flag; then
-    filter_terminal
-  fi
-
-  # Si se activa muestra todos los procesos del usuario especificado, si no muestra PS_FOTO filtrado sin mas
-  if $show_user_flag; then
-    show_process_user
-  else
-    if [[ $imprimir_archivo_flag == true ]]; then
-      echo "$PS_FOTO" > "$user_file"
-    else 
-      echo "$PS_FOTO"
-    fi
-  fi
-
-
-
-  # Si se activa busca los procesos de un directorio especificado
-  if $show_lsof_flag; then
-    show_lsof "$dir_lsof" 
-  fi
-
+  filtros_modo_sesion
 else
+  # MODO tabla de sessiones
+  echo "$PS_FOTO" 
 
-  echo "$PS_FOTO" | awk ' BEGIN {
-    # Imprimir los encabezados de las columnas
-    print  "sid | total de pgid | total de %mem| pgid | user | tty | cmd";
-  }
+  # SID es el identificador de sesion, varios procesos pueden tener el mismo identificador de sesion
+  #cuantos grupos de procesos hay en cada sesion 
+  # total de memoria consumida
+  #el pid del proceso lider coincide con el sid del proceso
 
-  {
-    # Asignamos las variables de acuerdo a las columnas de entrada
-    pid = $1;         
-    sid = $2;         
-    pgid = $3;         
-    cmd = $7;         
-    uid = $5;         
-    mem = $4;          
-    tty = $6;          
-
-    # Procesar solo sesiones válidas (sid != 0)
-    if (sid != 0) {
-        # Si la sesión no ha sido registrada antes, la inicializamos
-        if (!(sid in sesiones)) {
-            sesiones[sid] = "";
-            grupos[sid] = "";     
-            memoria[sid] = 0;     
-            lider[sid] = pid;     
-            usuario[sid] = get_user(uid);  
-            terminal[sid] = tty;  
-            comando[sid] = cmd;   
-        }
-
-        # Sumar la memoria consumida por la sesión
-        memoria[sid] += mem;
-
-        # Si el proceso es el líder de la sesión, actualizamos la información
-        if (pgid == pid) {
-            lider[sid] = pid;
-            comando[sid] = cmd;
-        }
-
-        # Registrar los grupos de procesos en la sesión (sin repetir)
-        if (pgid != sid) {
-            grupos[sid] = grupos[sid] (grupos[sid] ? " " : "") pgid;
-        }
-    }
-}
-
-END {
-    # Al final, procesamos y mostramos la información recopilada
-    for (sid in sesiones) {
-        # Contar cuántos grupos de procesos diferentes hay en la sesión
-        split(grupos[sid], grps, " ");
-        total_grupos = length(grps);
-
-        # Verificar los datos del líder de la sesión
-        if (lider[sid] != "" && lider[sid] != sid) {
-            lider_pid = lider[sid];
-            lider_usuario = usuario[sid];
-            lider_terminal = terminal[sid];
-            lider_comando = comando[sid];
-        } else {
-            lider_pid = "?";
-            lider_usuario = "?";
-            lider_terminal = "?";
-            lider_comando = "?";
-        }
-
-        # Imprimir la información de la sesión en formato tabulado
-        print sid "\t" total_grupos "\t" memoria[sid] "\t" lider_pid "\t" lider_usuario "\t" lider_terminal "\t" lider_comando;
-    }
-}
-
-# Función para obtener el nombre del usuario a partir del UID
-function get_user(uid) {
-    # Ejecutamos el comando `getent passwd` para obtener el nombre de usuario
-    cmd = "getent passwd " uid " | cut -d: -f1";
-    cmd | getline user;
-    close(cmd);
-    return user;
-}
-  '
-
-fi
+fi 
