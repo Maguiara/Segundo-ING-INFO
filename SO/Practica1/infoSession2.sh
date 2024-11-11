@@ -45,10 +45,6 @@ EOF
 # Funcion que filtra los procesos con lsof
 filter_lsof() {
   local dir_lsof=$1
-  # Comprobamos que se haya pasado un directorio
-  if [ $dir_lsof == "" ]; then
-    error_exit "La opcion -d requiere un directorio"
-  fi
   # Comprobamos que el directorio exista
   if [ ! -d "$dir_lsof" ]; then
     error_exit "El directorio $dir_lsof no existe"
@@ -119,9 +115,8 @@ error_exit() {
 }
 
 #Funcion para filtrar los procesos por modo de sesion
-filtros_modo_sesion() {
+filtros_foto_ps() {
   # Filtra PS_FOTO por los procesos con o sin identidicador 0
-
   if ! $show_identifier_flag; then
     filter_identifier_0
   fi
@@ -143,20 +138,49 @@ filtros_modo_sesion() {
     filter_lsof "$dir_lsof" 
   fi
 
-  if $imprimir_archivo_flag; then
-    echo "$PS_HEADER" > "$user_file"
-    echo "$PS_FOTO" >> "$user_file"
-    if $show_num_process_flag; then
-      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)" >> "$user_file"
-    fi
-  else
-    echo "$PS_HEADER"
-    echo "$PS_FOTO"
-    if $show_num_process_flag; then
-      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)"
-    fi
-  fi
+}
 
+# Si no se activa la opcion -e se muestra la tabla de sesiones
+get_active_sessions() {
+    local sids
+    # Se guarda cada sid unico en la variable sids
+    sids=$(echo "$PS_FOTO" | awk '{print $1}' | sort -u)
+
+    # Se recorre cada sid y se obtiene la informacion de la sesion
+    for sid in $sids; do
+        process_leader_info="$(get_process_leader_info "$sid")"
+        process_groups_count="$(get_process_groups_count "$sid")"
+        memory_usage="$(get_memory_usage "$sid")"
+
+        # Se imprime la informacion de la sesion
+        printf "%-10s %-10s %-10s %s\n" "$sid" "$process_groups_count" "$memory_usage" "$process_leader_info"
+    done
+}
+
+# Funcion para obtener la informacion del lider de un proceso
+get_process_leader_info() {
+    local sid="$1"
+    local leader_info
+
+    # Se intenta obtener la informacion del lider de la sesion, si no se obtiene se imprime ? ? ? ?
+    leader_info=$(echo "$PS_FOTO" | awk -v sid="$sid" '$3 == sid' | head -n 1)
+    if [[ -z "$leader_info" ]]; then
+        printf "%-5s %-10s %-10s %s" "?" " ?" " ?" " ?"
+    else
+       echo "$leader_info" | awk '{printf "%-5s %-10s %-10s %s", $3, $4, $5, $7}'
+    fi
+}
+
+# Funcion para obtener el numero de grupos de procesos de una sesion
+get_process_groups_count() {
+    local sid="$1"
+    echo "$PS_FOTO" | awk -v sid="$sid" '$1 == sid {print $2}' | sort -u | wc -l
+}
+
+# Funcion para obtener el uso de memoria de una sesion
+get_memory_usage() {
+    local sid="$1"
+    echo "$PS_FOTO" | awk -v sid="$sid" '$1 == sid {total += $6} END {printf "%.2f MB", total}' 
 }
 
 ############################################################################################################
@@ -258,17 +282,37 @@ done
 #echo "Usuarios especificados: ${usuarios[@]}"
 #echo "Bandera de guaradar en archivo: $imprimir_archivo_flag"
 #echo "Archivo= $user_file"
+# Filtramos los procesos segun las opciones seleccionadas
+filtros_foto_ps
 
-
+# Comprobamos si se ha activado el modo de sesion
 if $modo_ps_flag; then
-  filtros_modo_sesion
+  if $imprimir_archivo_flag; then
+    echo "$PS_HEADER" > "$user_file"
+    echo "$PS_FOTO" >> "$user_file"
+    if $show_num_process_flag; then
+      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)" >> "$user_file"
+    fi
+  else
+    echo "$PS_HEADER"
+    echo "$PS_FOTO"
+    if $show_num_process_flag; then
+      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)"
+    fi
+  fi
 else
-  # MODO tabla de sessiones
-  echo "$PS_FOTO" 
-
-  # SID es el identificador de sesion, varios procesos pueden tener el mismo identificador de sesion
-  #cuantos grupos de procesos hay en cada sesion 
-  # total de memoria consumida
-  #el pid del proceso lider coincide con el sid del proceso
+  if $imprimir_archivo_flag; then
+    printf "%-10s %-10s %-10s %-5s %-10s %-10s %s\n" "SID" "PGroups" "MemUsage" "PID" "User" "TTY" "CMD" > "$user_file"
+    get_active_sessions >> "$user_file"
+    if $show_num_process_flag; then
+      echo "Numero de sesiones: $(echo "$PS_FOTO" | awk '{print $1}' | sort -u | wc -l)" >> "$user_file"
+    fi
+  else
+    printf "%-10s %-10s %-10s %-5s %-10s %-10s %s\n" "SID" "PGroups" "MemUsage" "PID" "User" "TTY" "CMD"
+    get_active_sessions
+    if $show_num_process_flag; then
+      echo "Numero de sesiones: $(echo "$PS_FOTO" | awk '{print $1}' | sort -u | wc -l)"
+    fi
+  fi
 
 fi 
