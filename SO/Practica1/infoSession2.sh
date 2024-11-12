@@ -19,7 +19,10 @@ ACTUAL_USER=$(whoami)
 show_help() {
   cat << EOF
     =============================================================
-    Uso: $0 [-h] [-z] [-u user1 ... userN] [-d dir]
+    Modo de uso: 
+    $0 [-h]
+    $0 [-e] [-z] [-u user1 ... userN] [-d dir] [-n] [-t] [-f file] [-sm] [-r] [-sg]
+  
     =============================================================
     Opciones:
 
@@ -137,6 +140,16 @@ filtros_foto_ps() {
   if $show_lsof_flag; then
     filter_lsof "$dir_lsof" 
   fi
+  
+  # Si se activa ordenamiento por memoria consumida
+  if $ordenar_memoria_flag; then
+    PS_FOTO=$(echo "$PS_FOTO" | sort -nk6)
+  fi
+
+  #Si se activa se revierte el ordenamiento
+  if $revertir_ordenamiento_flag; then
+    PS_FOTO=$(echo "$PS_FOTO" | tac)
+  fi
 
 }
 
@@ -183,6 +196,63 @@ get_memory_usage() {
     echo "$PS_FOTO" | awk -v sid="$sid" '$1 == sid {total += $6} END {printf "%.2f MB", total}' 
 }
 
+print_process_table() {
+  if $imprimir_archivo_flag; then
+    echo "$PS_HEADER" > "$user_file"
+    echo "$PS_FOTO" >> "$user_file"
+    if $show_num_process_flag; then
+      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)" >> "$user_file"
+    fi
+  else
+    echo "$PS_HEADER"
+    echo "$PS_FOTO"
+    if $show_num_process_flag; then
+      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)"
+    fi
+  fi
+}
+
+print_session_table() {
+  if $imprimir_archivo_flag; then
+    if [[ ! -f "$user_file" ]]; then
+      error_exit "El archivo $user_file no es valido"
+    fi
+    # Imprimimos la cabecera en el archivo 
+    printf "%-10s %-10s %-10s %-5s %-10s %-10s %s\n" "SID" "PGroups" "MemUsage" "PID" "User" "TTY" "CMD" > "$user_file"
+    if $revertir_ordenamiento_flag; then
+      process_print_option | tac >> "$user_file"
+    else 
+       process_print_option >> "$user_file"
+    fi
+    # Si se activa se muestra el numero de sesiones
+    if $show_num_process_flag; then
+      echo "Numero de sesiones: $(echo "$PS_FOTO" | awk '{print $1}' | sort -u | wc -l)" >> "$user_file"
+    fi
+  else
+    printf "%-10s %-10s %-10s %-5s %-10s %-10s %s\n" "SID" "PGroups" "MemUsage" "PID" "User" "TTY" "CMD"
+    if $revertir_ordenamiento_flag; then
+      process_print_option | tac
+    else 
+      process_print_option
+    fi
+    # Si se activa se muestra el numero de sesiones
+    if $show_num_process_flag; then
+      echo "Numero de sesiones: $(echo "$PS_FOTO" | awk '{print $1}' | sort -u | wc -l)"
+    fi
+  fi
+}
+
+process_print_option() {
+  if $ordenar_grupos_procesos_flag; then
+    get_active_sessions | sort -nk2
+  elif $ordenar_memoria_flag; then
+    get_active_sessions | sort -nk3
+  else
+    get_active_sessions
+  fi
+}
+
+
 ############################################################################################################
 ##GESTION DE LAS FLAGS Y ARGUMENTOS DEL SCRIPT##
 
@@ -195,10 +265,11 @@ show_num_process_flag=false
 show_terminal_flag=false
 modo_ps_flag=false
 imprimir_archivo_flag=false
-user_arg=""
+ordenar_memoria_flag=false
+ordenar_grupos_procesos_flag=false
+revertir_ordenamiento_flag=false
 dir_lsof=""
 user_file=""
-# Array para almacenar los usuarios
 usuarios=()
 
 # Funcion para gestionar las opciones del script
@@ -208,7 +279,7 @@ while [[ $# -gt 0 ]]; do
   option=$1
   case $option in 
     -h)
-      # Activar el flag de mostrar la ayuda
+      # Activar la funcion que muestra la ayuda
       show_help
       ;;
     -z)
@@ -259,6 +330,18 @@ while [[ $# -gt 0 ]]; do
       user_file=$1
       shift
       ;;
+    -sm)
+      ordenar_memoria_flag=true
+      shift
+      ;;
+    -sg)
+      ordenar_grupos_procesos_flag=true
+      shift
+      ;;
+    -r)
+      revertir_ordenamiento_flag=true
+      shift
+      ;;
     *)
       #Mensaje de error si falta un argumento
       error_exit "La opcion $option no es valida"
@@ -270,6 +353,22 @@ done
 ############################################################################################################
 ##CUERPO DEL SCRIPT##
 
+# Comprobamos que sg y e no estan activos al mismo tiempo
+if $ordenar_grupos_procesos_flag && $modo_ps_flag; then
+  error_exit "Las opciones -sg y -e no pueden estar activas al mismo tiempo"
+fi
+
+# Filtramos los procesos segun las opciones seleccionadas
+filtros_foto_ps
+
+# Comprobamos si se ha activado el modo de sesion
+if $modo_ps_flag; then
+  print_process_table
+else
+  print_session_table
+fi 
+
+############################################################################################################
 # DEBUG # 
 # Descomentar en caso de necesitar ver el valor de las variables
 
@@ -282,37 +381,3 @@ done
 #echo "Usuarios especificados: ${usuarios[@]}"
 #echo "Bandera de guaradar en archivo: $imprimir_archivo_flag"
 #echo "Archivo= $user_file"
-# Filtramos los procesos segun las opciones seleccionadas
-filtros_foto_ps
-
-# Comprobamos si se ha activado el modo de sesion
-if $modo_ps_flag; then
-  if $imprimir_archivo_flag; then
-    echo "$PS_HEADER" > "$user_file"
-    echo "$PS_FOTO" >> "$user_file"
-    if $show_num_process_flag; then
-      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)" >> "$user_file"
-    fi
-  else
-    echo "$PS_HEADER"
-    echo "$PS_FOTO"
-    if $show_num_process_flag; then
-      echo "Numero de procesos: $(echo "$PS_FOTO" | wc -l)"
-    fi
-  fi
-else
-  if $imprimir_archivo_flag; then
-    printf "%-10s %-10s %-10s %-5s %-10s %-10s %s\n" "SID" "PGroups" "MemUsage" "PID" "User" "TTY" "CMD" > "$user_file"
-    get_active_sessions >> "$user_file"
-    if $show_num_process_flag; then
-      echo "Numero de sesiones: $(echo "$PS_FOTO" | awk '{print $1}' | sort -u | wc -l)" >> "$user_file"
-    fi
-  else
-    printf "%-10s %-10s %-10s %-5s %-10s %-10s %s\n" "SID" "PGroups" "MemUsage" "PID" "User" "TTY" "CMD"
-    get_active_sessions
-    if $show_num_process_flag; then
-      echo "Numero de sesiones: $(echo "$PS_FOTO" | awk '{print $1}' | sort -u | wc -l)"
-    fi
-  fi
-
-fi 
