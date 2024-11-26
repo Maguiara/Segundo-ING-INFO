@@ -1,5 +1,11 @@
 
 
+#ifndef SAFEFD_H
+#define SAFEFD_H
+
+#include "tools.h"
+
+
 class SafeFD {
  public:
   // Constructor por parametrizado y por defecto
@@ -25,7 +31,10 @@ class SafeFD {
 
   // Métodos de acceso
   [[nodiscard]] bool is_valid() const noexcept { return fd_ >= 0; }
-  [[nodiscard]] int get() const noexcept { return fd_; }
+  [[nodiscard]] int get_fd() const noexcept { return fd_; }
+  // Metodos para el obeter el descriptor de archivo
  private:
   int fd_;
 };
+
+#endif
