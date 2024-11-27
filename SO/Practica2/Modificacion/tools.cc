@@ -7,7 +7,9 @@ void show_help() {
   std::cout << "Uso: docserver [opciones] archivo\n"
             << "Opciones:\n"
             << "  -h, --help: Mostrar esta ayuda\n"
-            << "  -v, --verbose: Mostrar información adicional\n";
+            << "  -v, --verbose: Mostrar información adicional\n"
+            // Modificacio si el archivo es mayor que 1024 bytes, se considera un error fatal y se detiene la ejecucion
+            << "  -x,  : Si el archivo es mayor que 1024 bytes, se detiene la ejecución\n";
 }
 
 std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
@@ -21,7 +23,9 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
       options.verbose_flag = true;
     } else if (!it->starts_with("-")) {
       options.aditional_arguments.push_back(std::string(*it));
-    }else {
+    } else if (*it == "-x") {
+      options.stop_flag = true;
+    } else {
       return std::unexpected(ErrorCode::UNKNOWN_OPTION);
     }
   }
@@ -32,7 +36,7 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
 }
 
 
-std::expected<SafeMap, int> read_all(const std::string& path, bool verbose) {
+std::expected<SafeMap, int> read_all(const std::string& path, bool verbose, bool stop) {
   if (verbose) std::cerr << "Intentando abrir el archivo " << path << "\n";
   std::expected<SafeFD, int> result = open_file(path, O_RDONLY);
   if (!result.has_value()) {
@@ -50,7 +54,10 @@ std::expected<SafeMap, int> read_all(const std::string& path, bool verbose) {
 
   if (verbose) std::cerr << "Obteniendo la longitud del archivo " << path << "\n";
   long int length = lseek(fd.get_fd(), 0, SEEK_END);
-
+  if (stop && length > 1024) {
+    if (verbose) std::cerr << "El archivo " << path << " es mayor que 1024 bytes\n";
+    return std::unexpected(1024);
+  }
   if (verbose) std::cerr << "Intentando mapear el archivo " << path << " en memoria\n";
   void* mem = mmap(nullptr, static_cast<size_t>(length), PROT_READ, MAP_PRIVATE, fd.get_fd(), 0);
   if (mem == MAP_FAILED) {

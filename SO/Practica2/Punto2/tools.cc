@@ -2,6 +2,8 @@
 #include "tools.h"
 #include "SafeFD.h"
 #include "SafeMap.h"
+// para poder usar los sockets
+
 
 void show_help() {
   std::cout << "Uso: docserver [opciones] archivo\n"
@@ -19,6 +21,7 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
     if (*it == "-h" || *it == "--help") {
       options.show_help_flag = true;
     } else if (*it == "-v" || *it == "--verbose") {
+      options.verbose_flag = true;
     } else if (*it == "-p" || *it == "--port") {
       if (++it == arguments.end()) return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
       options.port = std::stoi(std::string(*it));
@@ -67,62 +70,43 @@ std::expected<SafeMap, int> read_all(const std::string& path, bool verbose) {
   return map;
 }
 
-void start_server(int port, const std::string& filepath, bool verbose) {
-  int server_fd, new_socket;
-  struct sockaddr_in address{};
-  int opt = 1;
-  int addrlen = sizeof(address);
-  if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-    perror("socket failed");
-    exit(EXIT_FAILURE);
+std::expected<SafeFD, int> make_socket(uint16_t port) {
+  int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd < 0) {
+    return std::unexpected(errno);
   }
-  if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-    perror("setsockopt");
-    exit(EXIT_FAILURE);
+  SafeFD safe_fd(sockfd);
+  
+  // Configuracion el socket
+  sockaddr_in serv_addr;
+  // Pone todos los bytes a 0 en la estructura serv_addr
+  std::memset(&serv_addr, 0, sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  serv_addr.sin_port = htons(port);
+
+  int bind_socket = bind(safe_fd.get_fd(), reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr));
+  if (bind_socket < 0) {
+    return std::unexpected(errno);
   }
-  address.sin_family = AF_INET;
-  address.sin_addr.s_addr = INADDR_ANY;
-  address.sin_port = htons(port);
-  if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
-    perror("bind failed");
-    exit(EXIT_FAILURE);
-  }
-  if (listen(server_fd, 3) < 0) {
-    perror("listen");
-    exit(EXIT_FAILURE);
-  }
-  while (true) {
-    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0) {
-      perror("accept");
-      continue;
-    }
-    // Leer el contenido del archivo
-    auto result = read_all(filepath, verbose);
-    if (!result) {
-      int err = result.error();
-      std::string response;
-      if (err == EACCES) {
-        response = "HTTP/1.1 403 Forbidden\n\n";
-      } else if (err == ENOENT) {
-        response = "HTTP/1.1 404 Not Found\n\n";
-      } else {
-        response = "HTTP/1.1 500 Internal Server Error\n\n";
-      }
-      send(new_socket, response.c_str(), response.size(), 0);
-    } else {
-      SafeMap file_map = result.value();
-      std::ostringstream response;
-      response << "HTTP/1.1 200 OK\n" << "Content-Length: " << file_map.get().size() << "\n\n" << file_map.get();
-      std::string response_str = response.str();
-      send(new_socket, response_str.c_str(), response_str.size(), 0);
-    }
-    close(new_socket);
-  }
+
+  return safe_fd;
 }
 
-std::string get_env(const std::string& name) {
-  std::cout << header << "\n" << body << "\n";
+int listen_connection(const SafeFD& socket) {
+  int conection = listen(socket.get_fd(), 10);
+  if (conection < 0) {
+    return errno;
+  }
+  return 0;
 }
+
+
+
+void send_response(std::string_view header, std::string_view body) {
+  std::cout << header << "\n" << body;
+}
+
 
 
 std::string getenv(const std::string& name) {

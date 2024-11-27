@@ -17,11 +17,6 @@
 #include <errno.h>      // Para errno
 #include <sys/mman.h>   // Para mmap
 #include <cstring>      // Para strerror
-#include <netinet/in.h> // Para sockaddr_in
-#include <sys/socket.h> // Para socket, bind, listen
-#include <arpa/inet.h>  // Para htons
-#include <cstdlib>      // Para EXIT_SUCCESS, EXIT_FAILURE
-#include <cstdint>      // Para uint16_t
 #include "SafeFD.h"     // Para fd mas seguro
 #include "SafeMap.h"    // Para mapear archivos
 
@@ -45,21 +40,17 @@ struct OpcionesAdmitidas {
   // Flags de opciones
   bool show_help_flag = false;
   bool verbose_flag = false;
+  bool stop_flag = false;
   // Argumentos
   std::string filename;
   std::vector<std::string> aditional_arguments;
-  int port = 8080;
 };
 
 class SafeMap; // declaración adelantada
-class SafeFD;  // declaración adelantada
 
 void show_help();
 
 std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]);
-std::expected<SafeMap, int> read_all(const std::string& path, bool verbose);
-std::expected<SafeFD, int> make_socket(uint16_t port);
-int listen_connection(const SafeFD& socket);
-void send_response(std::string_view header, std::string_view body);
-
+std::expected<SafeMap, int> read_all(const std::string& path, bool verbose, bool stop);
+void send_response(std::string_view header, std::string_view body = {});
 std::string getenv(const std::string& name);
