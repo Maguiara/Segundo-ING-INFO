@@ -38,14 +38,11 @@ int main (int argc, char* argv[]) {
       return EXIT_FAILURE;
     }
 
-
-    while (true) {
-    // Aceptar la conexión
-
-    // Leer archivo de memoria con read_all
-
+    auto client = accept_connection(socket.value());
+    if (!client.has_value()) {
+      std::cerr << "Error al aceptar la conexión: " << strerror(client.error()) << "\n";
+      return EXIT_FAILURE;
     }
-
 
   return EXIT_SUCCESS;
 }

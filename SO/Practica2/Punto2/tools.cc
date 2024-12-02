@@ -24,17 +24,22 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
       options.verbose_flag = true;
     } else if (*it == "-p" || *it == "--port") {
       if (++it == arguments.end()) return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
-      options.port = std::stoi(std::string(++it));
+      options.port = std::stoi(std::string(*it));
+      options.port_flag = true;
+      std::cout << "Puerto: " << options.port << "\n";
     } else if (!it->starts_with("-")) {
       options.aditional_arguments.push_back(std::string(*it));
-      if (options.aditional_arguments.empty()) return std::unexpected(ErrorCode::MISSING_FILE);
-      if (options.port == 0) options.port = 8080; // Default port
+    } else {
       return std::unexpected(ErrorCode::UNKNOWN_OPTION);
     }
   }
   if (options.aditional_arguments.empty()) return std::unexpected(ErrorCode::MISSING_FILE);
   else options.filename = options.aditional_arguments.front();
-  
+
+  if (!options.port_flag) {
+    std::string puerto = getenv("DOCSERVER_PORT");
+    if (!puerto.empty()) options.port = std::stoi(puerto);
+  }
   return options;
 }
 
@@ -71,11 +76,13 @@ std::expected<SafeMap, int> read_all(const std::string& path, bool verbose) {
 
 std::expected<SafeFD, int> make_socket(uint16_t port) {
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  std::cout << "Socket: " << sockfd << "\n";
   if (sockfd < 0) {
+    std::cout << "Fallo del socket\n";
     return std::unexpected(errno);
   }
   SafeFD safe_fd(sockfd);
-  
+
   // Configuracion el socket
   sockaddr_in serv_addr;
   // Pone todos los bytes a 0 en la estructura serv_addr
@@ -85,7 +92,9 @@ std::expected<SafeFD, int> make_socket(uint16_t port) {
   serv_addr.sin_port = htons(port);
 
   int bind_socket = bind(safe_fd.get_fd(), reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr));
+  std::cout << "Bind: " << bind_socket << "\n";
   if (bind_socket < 0) {
+    std::cout << "Fallo del bind\n";
     return std::unexpected(errno);
   }
 
@@ -94,12 +103,22 @@ std::expected<SafeFD, int> make_socket(uint16_t port) {
 
 int listen_connection(const SafeFD& socket) {
   int conection = listen(socket.get_fd(), 10);
+  std::cout << "Listen: " << conection << "\n";
   if (conection < 0) {
     return errno;
   }
   return 0;
 }
 
+std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& client_addr) {
+  socklen_t client_addr_len = sizeof(client_addr);
+  int client_fd = accept(socket.get_fd(), reinterpret_cast<sockaddr*>(&client_addr), &client_addr_len);
+  std::cout << "Accept: " << client_fd << "\n";
+  if (client_fd < 0) {
+    return std::unexpected(errno);
+  }
+  return SafeFD(client_fd);
+}
 
 
 void send_response(std::string_view header, std::string_view body) {
@@ -109,7 +128,7 @@ void send_response(std::string_view header, std::string_view body) {
 
 
 std::string getenv(const std::string& name) {
-  char* value = getenv(name.c_str());
+  char* value = std::getenv(name.c_str());
   if (value) return std::string(value);
   else return std::string();
 }
