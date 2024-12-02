@@ -1,6 +1,7 @@
 
 #include "tools.h"
 #include "SafeFD.h"
+#include "SafeMap.h"
 
 int main (int argc, char* argv[]) {
  auto options = parse_args(argc, argv);
@@ -22,27 +23,63 @@ int main (int argc, char* argv[]) {
     }
     std::cerr << "Use --help o -h para obtener ayuda\n";
     return EXIT_FAILURE;
-  } 
+  }
   if (options.value().show_help_flag) {
     show_help();
     return EXIT_SUCCESS;
   }
-   auto socket = make_socket(static_cast<uint16_t>(options.value().port));
-   if (!socket.has_value()) {
+  auto socket = make_socket(static_cast<uint16_t>(options.value().port));
+  if (!socket.has_value()) {
     std::cerr << "Error al crear el socket: " << strerror(socket.error()) << "\n";
     return EXIT_FAILURE;
-   }
-    auto listen_socket = listen_connection(socket.value());
-    if (listen_socket != 0) {
-      std::cerr << "Error al escuchar el socket: " << strerror(listen_socket) << "\n";
-      return EXIT_FAILURE;
-    }
-
-    auto client = accept_connection(socket.value());
-    if (!client.has_value()) {
+  }
+  auto listen_socket = listen_connection(socket.value());
+  if (listen_socket != 0) {
+    std::cerr << "Error al escuchar el socket: " << strerror(listen_socket) << "\n";
+    return EXIT_FAILURE;
+  }
+  std::cout << "Escuchando en el puerto " << options.value().port << "\n";
+  sockaddr_in client_addr;
+  std::cout << "Esperando conexión 1\n";
+  auto client = accept_connection(socket.value(), client_addr);
+  if (!client.has_value()) {
       std::cerr << "Error al aceptar la conexión: " << strerror(client.error()) << "\n";
       return EXIT_FAILURE;
+  }
+  
+  auto result = read_all(options.value().filename, options.value().verbose_flag);
+  std::string header;
+  std::string_view body;
+  std::ostringstream oss;
+  if (!result.has_value()) {
+    switch (result.error())
+    {
+    case EACCES:
+      if (options.value().verbose_flag) std::cerr << "Permiso denegado : " << options.value().filename  << " " << strerror(result.error()) << "\n";
+      header = "403 Forbidden";
+      break;
+    case ENOENT:
+      if (options.value().verbose_flag) std::cerr << "Archivo no encontrado: " << options.value().filename  << " " << strerror(result.error()) << "\n";
+      header = "404 Not Found";
+      break;
+    case EINVAL:
+      if(options.value().verbose_flag) std::cerr << "Se intenta aceder a una zona de memorira restringida " << options.value().filename  << " " << strerror(result.error()) << "\n";
+      header = "501 Invalid maping";
+      break;
+    default:
+      if(options.value().verbose_flag) std::cerr << "Error desconocido: " << options.value().filename  << " " << strerror(result.error()) << "\n";
+      header = "500 Unnknown error";
+      break;
     }
+  } else {
+    SafeMap map = std::move(result.value());
+    body = map.get_sv();
+    size_t length = body.size();
+    oss << "Content-Length: " << length << '\n';
+    header = oss.str();
+  }
+  send_response(header, body);
+
 
   return EXIT_SUCCESS;
 }

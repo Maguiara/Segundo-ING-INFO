@@ -37,8 +37,9 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
   else options.filename = options.aditional_arguments.front();
 
   if (!options.port_flag) {
-    std::string puerto = getenv("DOCSERVER_PORT");
-    if (!puerto.empty()) options.port = std::stoi(puerto);
+    std::string port;
+    port = getenv("DOCSERVER_PORT");
+    if (!port.empty()) options.port = std::stoi(port);
   }
   return options;
 }
@@ -81,7 +82,7 @@ std::expected<SafeFD, int> make_socket(uint16_t port) {
     std::cout << "Fallo del socket\n";
     return std::unexpected(errno);
   }
-  SafeFD safe_fd(sockfd);
+  SafeFD socket(sockfd);
 
   // Configuracion el socket
   sockaddr_in serv_addr;
@@ -91,14 +92,25 @@ std::expected<SafeFD, int> make_socket(uint16_t port) {
   serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   serv_addr.sin_port = htons(port);
 
-  int bind_socket = bind(safe_fd.get_fd(), reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr));
+  int bind_socket = bind(socket.get_fd(), reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr));
   std::cout << "Bind: " << bind_socket << "\n";
   if (bind_socket < 0) {
     std::cout << "Fallo del bind\n";
     return std::unexpected(errno);
   }
 
-  return safe_fd;
+  // Settear el socket en modo no bloqueante, si no se hacen estas lineas el codigo no furula
+  int flags = fcntl(socket.get_fd(), F_GETFL, 0);
+  if (flags == -1) {
+    std::cout << "Error al obtener flags del socket\n";
+    return std::unexpected(errno);
+  }
+  if (fcntl(socket.get_fd(), F_SETFL, flags | O_NONBLOCK) == -1) {
+    std::cout << "Error al establecer el socket en modo no bloqueante\n";
+    return std::unexpected(errno);
+  }
+
+  return socket;
 }
 
 int listen_connection(const SafeFD& socket) {
@@ -112,6 +124,7 @@ int listen_connection(const SafeFD& socket) {
 
 std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& client_addr) {
   socklen_t client_addr_len = sizeof(client_addr);
+  std::cout << "Esperando conexión\n"; // deppuración
   int client_fd = accept(socket.get_fd(), reinterpret_cast<sockaddr*>(&client_addr), &client_addr_len);
   std::cout << "Accept: " << client_fd << "\n";
   if (client_fd < 0) {
