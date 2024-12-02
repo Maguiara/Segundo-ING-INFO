@@ -40,10 +40,8 @@ std::expected<SafeMap, int> read_all(const std::string& path, bool verbose) {
     return std::unexpected(result.error());
   }
   if (verbose) std::cerr << "Archivo " << path << " abierto correctamente\n";
-  std::cout << "Fd del archivo: " << result.value().get_fd() << "\n";
   // Como hemos proibido las copias, tenemos que mover el SafeFD a una variable local que se destruira al final del ambito
   SafeFD fd = std::move(result.value());
-  std::cout << "Fd del archivo despues de moverlo: " << fd.get_fd() << "\n";
   if (verbose) std::cerr << "Comprobando el descriptor de archivo de " << path << " sea valido " << "\n";
   if (!fd.is_valid()) {
     if (verbose) std::cerr << "El descriptor de archivo de " << path << " no es valido\n";

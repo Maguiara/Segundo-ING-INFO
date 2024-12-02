@@ -37,7 +37,6 @@ enum class ErrorCode {
   FILE_NOT_FOUND,
   // Otros errores (error fatal)
   OTHER_ERROR,
-  
 };
 
 

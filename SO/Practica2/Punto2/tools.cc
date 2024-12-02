@@ -24,12 +24,11 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
       options.verbose_flag = true;
     } else if (*it == "-p" || *it == "--port") {
       if (++it == arguments.end()) return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
-      options.port = std::stoi(std::string(*it));
-    } else if (!it->starts_with("-")) {
+      options.port = std::stoi(std::string(++it));
     } else if (!it->starts_with("-")) {
       options.aditional_arguments.push_back(std::string(*it));
-  if (options.aditional_arguments.empty()) return std::unexpected(ErrorCode::MISSING_FILE);
-  if (options.port == 0) options.port = 8080; // Default port
+      if (options.aditional_arguments.empty()) return std::unexpected(ErrorCode::MISSING_FILE);
+      if (options.port == 0) options.port = 8080; // Default port
       return std::unexpected(ErrorCode::UNKNOWN_OPTION);
     }
   }
