@@ -114,7 +114,7 @@ std::expected<SafeFD, int> make_socket(uint16_t port) {
 }
 
 int listen_connection(const SafeFD& socket) {
-  int conection = listen(socket.get_fd(), 10);
+  int conection = listen(socket.get_fd(), 5);
   std::cout << "Listen: " << conection << "\n";
   if (conection < 0) {
     return errno;
@@ -124,7 +124,7 @@ int listen_connection(const SafeFD& socket) {
 
 std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& client_addr) {
   socklen_t client_addr_len = sizeof(client_addr);
-  std::cout << "Esperando conexión\n"; // deppuración
+  std::cout << "Esperando conexión 2\n"; // deppuración
   int client_fd = accept(socket.get_fd(), reinterpret_cast<sockaddr*>(&client_addr), &client_addr_len);
   std::cout << "Accept: " << client_fd << "\n";
   if (client_fd < 0) {

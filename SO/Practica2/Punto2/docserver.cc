@@ -24,24 +24,32 @@ int main (int argc, char* argv[]) {
     std::cerr << "Use --help o -h para obtener ayuda\n";
     return EXIT_FAILURE;
   }
+  // Mostrar la ayuda si se solicita
   if (options.value().show_help_flag) {
     show_help();
     return EXIT_SUCCESS;
   }
+
+  // Creamos el socket
   auto socket = make_socket(static_cast<uint16_t>(options.value().port));
   if (!socket.has_value()) {
     std::cerr << "Error al crear el socket: " << strerror(socket.error()) << "\n";
     return EXIT_FAILURE;
   }
-  auto listen_socket = listen_connection(socket.value());
+  SafeFD socket_fd = std::move(socket.value());
+
+  // Escuchar el socket
+  auto listen_socket = listen_connection(socket_fd);
   if (listen_socket != 0) {
     std::cerr << "Error al escuchar el socket: " << strerror(listen_socket) << "\n";
     return EXIT_FAILURE;
   }
   std::cout << "Escuchando en el puerto " << options.value().port << "\n";
+
+  // Aceptar la conexion del socket
   sockaddr_in client_addr;
   std::cout << "Esperando conexión 1\n";
-  auto client = accept_connection(socket.value(), client_addr);
+  auto client = accept_connection(socket_fd, client_addr);
   if (!client.has_value()) {
       std::cerr << "Error al aceptar la conexión: " << strerror(client.error()) << "\n";
       return EXIT_FAILURE;
