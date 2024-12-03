@@ -47,7 +47,7 @@ int main (int argc, char* argv[]) {
   std::cout << "Escuchando en el puerto " << options.value().port << "\n";
 
   // Aceptar la conexion del socket
-  sockaddr_in client_addr;
+  sockaddr_in client_addr{};
   std::cout << "Esperando conexión 1\n";
   auto client = accept_connection(socket_fd, client_addr);
   if (!client.has_value()) {
@@ -55,39 +55,6 @@ int main (int argc, char* argv[]) {
       return EXIT_FAILURE;
   }
   
-  auto result = read_all(options.value().filename, options.value().verbose_flag);
-  std::string header;
-  std::string_view body;
-  std::ostringstream oss;
-  if (!result.has_value()) {
-    switch (result.error())
-    {
-    case EACCES:
-      if (options.value().verbose_flag) std::cerr << "Permiso denegado : " << options.value().filename  << " " << strerror(result.error()) << "\n";
-      header = "403 Forbidden";
-      break;
-    case ENOENT:
-      if (options.value().verbose_flag) std::cerr << "Archivo no encontrado: " << options.value().filename  << " " << strerror(result.error()) << "\n";
-      header = "404 Not Found";
-      break;
-    case EINVAL:
-      if(options.value().verbose_flag) std::cerr << "Se intenta aceder a una zona de memorira restringida " << options.value().filename  << " " << strerror(result.error()) << "\n";
-      header = "501 Invalid maping";
-      break;
-    default:
-      if(options.value().verbose_flag) std::cerr << "Error desconocido: " << options.value().filename  << " " << strerror(result.error()) << "\n";
-      header = "500 Unnknown error";
-      break;
-    }
-  } else {
-    SafeMap map = std::move(result.value());
-    body = map.get_sv();
-    size_t length = body.size();
-    oss << "Content-Length: " << length << '\n';
-    header = oss.str();
-  }
-  send_response(header, body);
-
 
   return EXIT_SUCCESS;
 }

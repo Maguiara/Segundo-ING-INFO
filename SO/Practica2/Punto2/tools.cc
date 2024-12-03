@@ -36,11 +36,11 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
   if (options.aditional_arguments.empty()) return std::unexpected(ErrorCode::MISSING_FILE);
   else options.filename = options.aditional_arguments.front();
 
-  if (!options.port_flag) {
-    std::string port;
-    port = getenv("DOCSERVER_PORT");
-    if (!port.empty()) options.port = std::stoi(port);
-  }
+  // if (!options.port_flag) {
+  //   std::string port;
+  //   port = getenv("DOCSERVER_PORT");
+  //   if (!port.empty()) options.port = std::stoi(port);
+  // }
   return options;
 }
 
@@ -100,15 +100,15 @@ std::expected<SafeFD, int> make_socket(uint16_t port) {
   }
 
   // Settear el socket en modo no bloqueante, si no se hacen estas lineas el codigo no furula
-  int flags = fcntl(socket.get_fd(), F_GETFL, 0);
-  if (flags == -1) {
-    std::cout << "Error al obtener flags del socket\n";
-    return std::unexpected(errno);
-  }
-  if (fcntl(socket.get_fd(), F_SETFL, flags | O_NONBLOCK) == -1) {
-    std::cout << "Error al establecer el socket en modo no bloqueante\n";
-    return std::unexpected(errno);
-  }
+  // int flags = fcntl(socket.get_fd(), F_GETFL, 0);
+  // if (flags == -1) {
+  //   std::cout << "Error al obtener flags del socket\n";
+  //   return std::unexpected(errno);
+  // }
+  // if (fcntl(socket.get_fd(), F_SETFL, flags | O_NONBLOCK) == -1) {
+  //   std::cout << "Error al establecer el socket en modo no bloqueante\n";
+  //   return std::unexpected(errno);
+  // }
 
   return socket;
 }
