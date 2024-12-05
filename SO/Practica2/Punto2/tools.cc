@@ -27,7 +27,6 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
       if (++it == arguments.end()) return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
       options.port = std::stoi(std::string(*it));
       options.port_flag = true;
-      std::cout << "Puerto: " << options.port << "\n";
     } else if (!it->starts_with("-")) {
       options.aditional_arguments.push_back(std::string(*it));
     } else {
@@ -130,7 +129,7 @@ std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& 
 
 
 int send_response(const SafeFD& socket, std::string_view header, std::string_view body) {
-  std::string response = std::string(header) + "\r\n\r\n" + std::string(body);
+  std::string response = std::string(header) + "\r\n" + std::string(body) + "\r\n";
   ssize_t bytes_sent = send(socket.get_fd(), response.c_str(), response.size(), 0);
   if (bytes_sent < 0) {
     return errno;

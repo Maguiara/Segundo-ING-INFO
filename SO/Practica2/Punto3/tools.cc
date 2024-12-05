@@ -10,7 +10,8 @@ void show_help() {
             << "Opciones:\n"
             << "  -h, --help: Mostrar esta ayuda\n"
             << "  -v, --verbose: Mostrar información adicional\n"
-            << "  -p <puerto>, --port <puerto>: Especificar el puerto TCP\n";
+            << "  -p <puerto>, --port <puerto>: Especificar el puerto TCP\n"
+            << "  -b <ruta>, --base <ruta>: Especificar la ruta base\n";
 }
 
 std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
@@ -27,21 +28,30 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
       if (++it == arguments.end()) return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
       options.port = std::stoi(std::string(*it));
       options.port_flag = true;
-      std::cout << "Puerto: " << options.port << "\n";
+    } else if (*it == "-b" || *it == "--base") {
+      if (++it == arguments.end()) return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
+      options.base_path = std::string(*it);
     } else if (!it->starts_with("-")) {
       options.aditional_arguments.push_back(std::string(*it));
     } else {
       return std::unexpected(ErrorCode::UNKNOWN_OPTION);
     }
   }
-  if (options.aditional_arguments.empty()) return std::unexpected(ErrorCode::MISSING_FILE);
-  else options.filename = options.aditional_arguments.front();
 
-  // Revisar bien cuando no exista la variable de entorno
-  // if (!options.port_flag) {
-  //   std::string port = std::getenv("DOCSERVER_PORT");
-  //   if (!port.empty()) options.port = std::stoi(port);
-  // }
+  if (options.base_path.empty()) {
+    char* env_base_path = std::getenv("DOCSERVER_BASEDIR");
+    if (env_base_path) {
+      options.base_path = std::string(env_base_path);
+    } else {
+      char cwd[PATH_MAX];
+      if (getcwd(cwd, sizeof(cwd)) != nullptr) {
+        options.base_path = std::string(cwd);
+      } else {
+        return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
+      }
+    }
+  }
+
   return options;
 }
 

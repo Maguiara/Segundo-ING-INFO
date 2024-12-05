@@ -44,9 +44,11 @@ struct OpcionesAdmitidas {
   bool verbose_flag = false;
   bool port_flag = false;
   // Argumentos
+  // Ya no hace falta obligar a que haya un archivo
   std::string filename;
   std::vector<std::string> aditional_arguments;
   int port = 8080;
+  std::string base_path;
 };
 
 class SafeMap; // declaración adelantada
