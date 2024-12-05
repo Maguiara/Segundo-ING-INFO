@@ -56,10 +56,10 @@ void show_help();
 
 std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]);
 std::expected<SafeMap, int> read_all(const std::string& path, bool verbose);
-std::expected<SafeFD, int> make_socket(uint16_t port);
-int listen_connection(const SafeFD& socket);
-std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& client_addr);
+std::expected<SafeFD, int> make_socket(uint16_t port, const bool verbose);
+int listen_connection(const SafeFD& socket, const bool verbose);
+std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& client_addr, const bool verbose);
 
-void send_response(std::string_view header, std::string_view body);
+int send_response(const SafeFD& socket, std::string_view header, std::string_view body);
 
 std::string getenv(const std::string& name);

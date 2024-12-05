@@ -6,7 +6,7 @@
 
 
 void show_help() {
-  std::cout << "Uso: docserver [opciones] archivo\n"
+  std::cout << "Uso: ./docserver [opciones] archivo\n"
             << "Opciones:\n"
             << "  -h, --help: Mostrar esta ayuda\n"
             << "  -v, --verbose: Mostrar información adicional\n"
@@ -20,6 +20,7 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
   for (auto it = arguments.begin(); it != arguments.end(); ++it) {
     if (*it == "-h" || *it == "--help") {
       options.show_help_flag = true;
+      return options;
     } else if (*it == "-v" || *it == "--verbose") {
       options.verbose_flag = true;
     } else if (*it == "-p" || *it == "--port") {
@@ -36,13 +37,14 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
   if (options.aditional_arguments.empty()) return std::unexpected(ErrorCode::MISSING_FILE);
   else options.filename = options.aditional_arguments.front();
 
+  // Revisar bien cuando no exista la variable de entorno
   // if (!options.port_flag) {
-  //   std::string port;
-  //   port = getenv("DOCSERVER_PORT");
+  //   std::string port = std::getenv("DOCSERVER_PORT");
   //   if (!port.empty()) options.port = std::stoi(port);
   // }
   return options;
 }
+
 
 
 std::expected<SafeMap, int> read_all(const std::string& path, bool verbose) {
@@ -75,69 +77,66 @@ std::expected<SafeMap, int> read_all(const std::string& path, bool verbose) {
   return map;
 }
 
-std::expected<SafeFD, int> make_socket(uint16_t port) {
+std::expected<SafeFD, int> make_socket(uint16_t port, const bool verbose) {
+  if (verbose) std::cerr << "Creando el socket\n";
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  std::cout << "Socket: " << sockfd << "\n";
+  if (verbose) std::cerr << "Socket creado correctamente\n";
   if (sockfd < 0) {
-    std::cout << "Fallo del socket\n";
+    if (verbose) std::cerr << "Error creando el socket\n";
     return std::unexpected(errno);
   }
   SafeFD socket(sockfd);
 
+  if (verbose) std::cerr << "Configurando el socket\n";
   // Configuracion el socket
   sockaddr_in serv_addr;
-  // Pone todos los bytes a 0 en la estructura serv_addr
-  std::memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   serv_addr.sin_port = htons(port);
+  if (verbose) std::cerr << "Socket configurado correctamente\n";
 
+  if (verbose) std::cerr << "Enlazando el socket\n";
   int bind_socket = bind(socket.get_fd(), reinterpret_cast<sockaddr*>(&serv_addr), sizeof(serv_addr));
-  std::cout << "Bind: " << bind_socket << "\n";
+  if (verbose) std::cerr << "Socket enlazado correctamente\n";
   if (bind_socket < 0) {
-    std::cout << "Fallo del bind\n";
+    if (verbose) std::cerr << "Error enlazando el socket\n";
     return std::unexpected(errno);
   }
-
-  // Settear el socket en modo no bloqueante, si no se hacen estas lineas el codigo no furula
-  // int flags = fcntl(socket.get_fd(), F_GETFL, 0);
-  // if (flags == -1) {
-  //   std::cout << "Error al obtener flags del socket\n";
-  //   return std::unexpected(errno);
-  // }
-  // if (fcntl(socket.get_fd(), F_SETFL, flags | O_NONBLOCK) == -1) {
-  //   std::cout << "Error al establecer el socket en modo no bloqueante\n";
-  //   return std::unexpected(errno);
-  // }
-
   return socket;
 }
 
-int listen_connection(const SafeFD& socket) {
+int listen_connection(const SafeFD& socket, const bool verbose) {
+  if (verbose) std::cerr << "Escuchando el socket\n";
   int conection = listen(socket.get_fd(), 5);
-  std::cout << "Listen: " << conection << "\n";
+  if (verbose) std::cerr << "Socket escuchando correctamente\n";
   if (conection < 0) {
+    if (verbose) std::cerr << "Error escuchando el socket\n";
     return errno;
   }
   return 0;
 }
 
-std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& client_addr) {
+std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& client_addr, const bool verbose) {
+  if (verbose) std::cerr << "Esperando la conexión\n";
   socklen_t client_addr_len = sizeof(client_addr);
-  std::cout << "Esperando conexión 2\n"; // deppuración
   int client_fd = accept(socket.get_fd(), reinterpret_cast<sockaddr*>(&client_addr), &client_addr_len);
-  std::cout << "Accept: " << client_fd << "\n";
+  if (verbose) std::cerr << "Conexión aceptada correctamente\n";
   if (client_fd < 0) {
+    if (verbose) std::cerr << "Error aceptando la conexión\n";
     return std::unexpected(errno);
   }
   return SafeFD(client_fd);
 }
 
 
-void send_response(std::string_view header, std::string_view body) {
-  std::cout << header << "\n" << body;
+int send_response(const SafeFD& socket, std::string_view header, std::string_view body) {
+  std::string response = std::string(header) + "\r\n\r\n" + std::string(body);
+  ssize_t bytes_sent = send(socket.get_fd(), response.c_str(), response.size(), 0);
+  if (bytes_sent < 0) {
+    return errno;
+  }
+  return 0;
 }
-
 
 
 std::string getenv(const std::string& name) {
@@ -146,14 +145,9 @@ std::string getenv(const std::string& name) {
   else return std::string();
 }
 
-
-
-
-
-
-
-
-
+//############################################################################################################
+// NO HACER CASO A ESTO, GUARDADO PARA ESTUDIO PERSONAL DEL CODIGO
+//############################################################################################################
 
 /** Por si llego a necesitarlo
  *  if (options.error() == ErrorCode::UNKNOWN_OPTION) {
@@ -170,3 +164,15 @@ std::string getenv(const std::string& name) {
       send_response("500 Internal Server Error", "Error interno del servidor\n");
     }
  */
+
+
+  // Estas lineas son para setear el socket en modo no bloqueante, no necesario para esta practica
+  // int flags = fcntl(socket.get_fd(), F_GETFL, 0);
+  // if (flags == -1) {
+  //   std::cout << "Error al obtener flags del socket\n";
+  //   return std::unexpected(errno);
+  // }
+  // if (fcntl(socket.get_fd(), F_SETFL, flags | O_NONBLOCK) == -1) {
+  //   std::cout << "Error al establecer el socket en modo no bloqueante\n";
+  //   return std::unexpected(errno);
+  // }
