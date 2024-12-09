@@ -69,7 +69,7 @@ int main (int argc, char* argv[]) {
     }
     // Procesamos la peticion
     std::istringstream iss(request.value());
-    std::string petition, path, header;
+    std::string petition, client_path, header;
     std::string_view body;
     iss >> petition >> path;
     if (petition != "GET") {
@@ -97,32 +97,36 @@ int main (int argc, char* argv[]) {
       continue;
     }
 
-    // Buscamos el archivo
-    auto file = options.value().base_path + path;
-    auto file_content = read_all(file, options.value().verbose_flag);
-    if (!file_content.has_value()) {
-      if (file_content.error() == EACCES || file_content.error() == ENOENT) {
-        std::cerr << "Error leve al leer el archivo: " << strerror(file_content.error()) << "\n";
+    if (client_path.starts_with("/bin/")) {
+      
+
+      auto result_execute = execute_program(client_path, env);
+
+    } else {
+      auto file = options.value().base_path + client_path;
+      auto file_content = read_all(file, options.value().verbose_flag);
+      if (!file_content.has_value()) {
+        if (file_content.error() == EACCES || file_content.error() == ENOENT) {
+          std::cerr << "Error leve al leer el archivo: " << strerror(file_content.error()) << "\n";
+          continue;
+        } else {
+          std::cerr << "Error fatal al leer el archivo: " << strerror(file_content.error()) << "\n";
+          return EXIT_FAILURE;
+        }
+      }
+      SafeMap map = std::move(file_content.value());
+      body = map.get_sv();
+      std::ostringstream oss;
+      oss << "Content-Length: " << body.size() << '\n';
+      header = oss.str();
+      int result_send = send_response(client_fd, header, body);
+      if (result_send == ECONNRESET) {
+        std::cerr << "Error leve al enviar la respuesta: " << strerror(result_send) << "\n";
         continue;
-      } else {
-        std::cerr << "Error fatal al leer el archivo: " << strerror(file_content.error()) << "\n";
+      } else if (result_send != 0) {
+        std::cerr << "Error fatal al enviar la respuesta: " << strerror(result_send) << "\n";
         return EXIT_FAILURE;
       }
     }
-    SafeMap map = std::move(file_content.value());
-    body = map.get_sv();
-    std::ostringstream oss;
-    oss << "Content-Length: " << body.size() << '\n';
-    header = oss.str();
-    int result_send = send_response(client_fd, header, body);
-    if (result_send == ECONNRESET) {
-      std::cerr << "Error leve al enviar la respuesta: " << strerror(result_send) << "\n";
-      continue;
-    } else if (result_send != 0) {
-      std::cerr << "Error fatal al enviar la respuesta: " << strerror(result_send) << "\n";
-      return EXIT_FAILURE;
-    }
-    // Cerramos la conexión, SafeFD se encarga de cerrar el descriptor
   }
-  return EXIT_SUCCESS;
 }
