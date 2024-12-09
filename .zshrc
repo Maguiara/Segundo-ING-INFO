@@ -162,6 +162,7 @@ function ggit() {
 
 
 
+
 alias qtsp="LANG=C qtspim"
 
 export NVM_DIR="$HOME/.nvm"
