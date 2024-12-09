@@ -20,6 +20,7 @@
 #include <arpa/inet.h>  // Para htons
 #include <cstdlib>      // Para EXIT_SUCCESS, EXIT_FAILURE, std::getenv
 #include <cstdint>      // Para uint16_t
+#include <limits.h>    // Para PATH_MAX
 #include "SafeFD.h"     // Para fd mas seguro
 #include "SafeMap.h"    // Para mapear archivos
 
@@ -48,7 +49,7 @@ struct OpcionesAdmitidas {
   std::string filename;
   std::vector<std::string> aditional_arguments;
   int port = 8080;
-  std::string base_path;
+  std::string base_path = "/home/usuario";
 };
 
 class SafeMap; // declaración adelantada
@@ -61,6 +62,8 @@ std::expected<SafeMap, int> read_all(const std::string& path, bool verbose);
 std::expected<SafeFD, int> make_socket(uint16_t port, const bool verbose);
 int listen_connection(const SafeFD& socket, const bool verbose);
 std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& client_addr, const bool verbose);
+std::expected<std::string, int> receive_request(const SafeFD& socket, size_t max_size, const bool verbose);
+
 
 int send_response(const SafeFD& socket, std::string_view header, std::string_view body);
 

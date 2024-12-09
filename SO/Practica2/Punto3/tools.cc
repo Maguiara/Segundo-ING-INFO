@@ -32,25 +32,25 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
       if (++it == arguments.end()) return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
       options.base_path = std::string(*it);
     } else if (!it->starts_with("-")) {
-      options.aditional_arguments.push_back(std::string(*it));
+      options.filename = std::string(*it);
     } else {
       return std::unexpected(ErrorCode::UNKNOWN_OPTION);
     }
   }
 
-  if (options.base_path.empty()) {
-    char* env_base_path = std::getenv("DOCSERVER_BASEDIR");
-    if (env_base_path) {
-      options.base_path = std::string(env_base_path);
-    } else {
-      char cwd[PATH_MAX];
-      if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-        options.base_path = std::string(cwd);
-      } else {
-        return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
-      }
-    }
-  }
+  // if (options.base_path.empty()) {
+  //   char* env_base_path = std::getenv("DOCSERVER_BASEDIR");
+  //   if (env_base_path) {
+  //     options.base_path = std::string(env_base_path);
+  //   } else {
+  //     char cwd[PATH_MAX];
+  //     if (getcwd(cwd, sizeof(cwd)) != nullptr) {
+  //       options.base_path = std::string(cwd);
+  //     } else {
+  //       return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
+  //     }
+  //   }
+  // }
 
   return options;
 }
@@ -58,31 +58,49 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
 
 
 std::expected<SafeMap, int> read_all(const std::string& path, bool verbose) {
-  if (verbose) std::cerr << "Intentando abrir el archivo " << path << "\n";
-  std::expected<SafeFD, int> result = open_file(path, O_RDONLY);
+  std::string relative_path = path;
+  if (path.starts_with("/")) {
+    if (verbose) std::cerr << "Transformando la ruta absoluta " << path << " en ruta relativa\n";
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) != nullptr) {
+      std::string current_dir(cwd);
+      if (path.find(current_dir) == 0) {
+        relative_path = path.substr(current_dir.length() + 1);
+      } else {
+        if (verbose) std::cerr << "La ruta absoluta no contiene el directorio actual\n";
+        return std::unexpected(errno);
+      }
+    } else {
+      if (verbose) std::cerr << "Error obteniendo el directorio actual\n";
+      return std::unexpected(errno);
+    }
+  }
+
+  if (verbose) std::cerr << "Intentando abrir el archivo " << relative_path << "\n";
+  std::expected<SafeFD, int> result = open_file(relative_path, O_RDONLY);
   if (!result.has_value()) {
-    if (verbose) std::cerr << "Error al abrir el archivo " << path << ": " <<   "\n";
+    if (verbose) std::cerr << "Error al abrir el archivo " << relative_path << ": " << strerror(result.error()) << "\n";
     return std::unexpected(result.error());
   }
-  if (verbose) std::cerr << "Archivo " << path << " abierto correctamente\n";
+  if (verbose) std::cerr << "Archivo " << relative_path << " abierto correctamente\n";
   // Como hemos proibido las copias, tenemos que mover el SafeFD a una variable local
   SafeFD fd = std::move(result.value());
-  if (verbose) std::cerr << "Comprobando el descriptor de archivo de " << path << " sea valido " << "\n";
+  if (verbose) std::cerr << "Comprobando el descriptor de archivo de " << relative_path << " sea valido " << "\n";
   if (!fd.is_valid()) {
-    if (verbose) std::cerr << "El descriptor de archivo de " << path << " no es valido\n";
+    if (verbose) std::cerr << "El descriptor de archivo de " << relative_path << " no es valido\n";
     return std::unexpected(errno);
   }
 
-  if (verbose) std::cerr << "Obteniendo la longitud del archivo " << path << "\n";
+  if (verbose) std::cerr << "Obteniendo la longitud del archivo " << relative_path << "\n";
   long int length = lseek(fd.get_fd(), 0, SEEK_END);
 
-  if (verbose) std::cerr << "Intentando mapear el archivo " << path << " en memoria\n";
+  if (verbose) std::cerr << "Intentando mapear el archivo " << relative_path << " en memoria\n";
   void* mem = mmap(nullptr, static_cast<size_t>(length), PROT_READ, MAP_PRIVATE, fd.get_fd(), 0);
   if (mem == MAP_FAILED) {
-    if (verbose) std::cerr << "Error al mapear el archivo " << path << ": " << strerror(errno) << "\n";
+    if (verbose) std::cerr << "Error al mapear el archivo " << relative_path << ": " << strerror(errno) << "\n";
     return std::unexpected(errno);
   }
-  if (verbose) std::cerr << "Archivo " << path << " mapeado correctamente\n";
+  if (verbose) std::cerr << "Archivo " << relative_path << " mapeado correctamente\n";
   SafeMap map{static_cast<char*>(mem), static_cast<int>(length)};
   return map;
 }
@@ -138,9 +156,24 @@ std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& 
   return SafeFD(client_fd);
 }
 
+std::expected<std::string, int> receive_request(const SafeFD& socket, size_t max_size, const bool verbose) {
+  std::string buffer(max_size, 0);
+  if (verbose) std::cerr << "Recibiendo la petición\n";
+  ssize_t bytes_received = recv(socket.get_fd(), &buffer[0], max_size, 0);
+  if (bytes_received < 0) {
+    if (verbose) std::cerr << "Error recibiendo la petición\n";
+    return std::unexpected(errno);
+  }
+  if (verbose) std::cerr << "Petición recibida correctamente\n";
+  buffer.resize(static_cast<std::string::size_type>(bytes_received));
+  return buffer;
+}
+
+
+
 
 int send_response(const SafeFD& socket, std::string_view header, std::string_view body) {
-  std::string response = std::string(header) + "\r\n\r\n" + std::string(body);
+  std::string response = std::string(header) + "\r\n" + std::string(body) + "\r\n";
   ssize_t bytes_sent = send(socket.get_fd(), response.c_str(), response.size(), 0);
   if (bytes_sent < 0) {
     return errno;
