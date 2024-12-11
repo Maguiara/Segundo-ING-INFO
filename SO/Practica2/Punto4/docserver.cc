@@ -56,7 +56,7 @@ int main (int argc, char* argv[]) {
     SafeFD client_fd = std::move(client.value());
 
     // Recibir la petición
-    size_t max_size = 4096;
+    size_t max_size = 4096; // Este tamaño es arbitrario
     auto request = receive_request(client_fd, max_size, options.value().verbose_flag);
     if (!request.has_value()) {
       if (request.error() == ECONNRESET) {

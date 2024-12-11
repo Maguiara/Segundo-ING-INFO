@@ -37,10 +37,10 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
   else options.filename = options.aditional_arguments.front();
 
   // Revisar bien cuando no exista la variable de entorno
-  // if (!options.port_flag) {
-  //   std::string port = std::getenv("DOCSERVER_PORT");
-  //   if (!port.empty()) options.port = std::stoi(port);
-  // }
+   if (!options.port_flag) {
+     const char* port_env = std::getenv("DOCSERVER_PORT");
+     if (port_env != nullptr) options.port = std::stoi(port_env);
+   }
   return options;
 }
 
@@ -139,9 +139,9 @@ int send_response(const SafeFD& socket, std::string_view header, std::string_vie
 
 
 std::string getenv(const std::string& name) {
-  char* value = std::getenv(name.c_str());
+  const char* value = std::getenv(name.c_str());
   if (value) return std::string(value);
-  else return std::string();
+  else return "";
 }
 
 //############################################################################################################
