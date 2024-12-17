@@ -31,6 +31,7 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
     } else if (*it == "-b" || *it == "--base") {
       if (++it == arguments.end()) return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
       options.base_path = std::string(*it);
+      options.base_path_flag = true;
     } else if (!it->starts_with("-")) {
       options.filename = std::string(*it);
     } else {
@@ -38,69 +39,48 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
     }
   }
 
-  // if (options.base_path.empty()) {
-  //   char* env_base_path = std::getenv("DOCSERVER_BASEDIR");
-  //   if (env_base_path) {
-  //     options.base_path = std::string(env_base_path);
-  //   } else {
-  //     char cwd[PATH_MAX];
-  //     if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-  //       options.base_path = std::string(cwd);
-  //     } else {
-  //       return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
-  //     }
-  //   }
-  // }
+  //Comprobaciones de que existan las variables de entorno
+  if (!options.port_flag) {
+    const char* env_port = std::getenv("DOCSERVER_PORT");
+    if (env_port != nullptr) options.port = std::stoi(std::string(env_port));
+  }
 
+  if (!options.base_path_flag) {
+    const char* env_base_path = std::getenv("DOCSERVER_BASEDIR");
+    if (env_base_path != nullptr) options.base_path = std::string(env_base_path);
+  }
   return options;
 }
 
 
 
 std::expected<SafeMap, int> read_all(const std::string& path, bool verbose) {
-  std::string relative_path = path;
-  if (path.starts_with("/")) {
-    if (verbose) std::cerr << "Transformando la ruta absoluta " << path << " en ruta relativa\n";
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-      std::string current_dir(cwd);
-      if (path.find(current_dir) == 0) {
-        relative_path = path.substr(current_dir.length() + 1);
-      } else {
-        if (verbose) std::cerr << "La ruta absoluta no contiene el directorio actual\n";
-        return std::unexpected(errno);
-      }
-    } else {
-      if (verbose) std::cerr << "Error obteniendo el directorio actual\n";
-      return std::unexpected(errno);
-    }
-  }
-
-  if (verbose) std::cerr << "Intentando abrir el archivo " << relative_path << "\n";
-  std::expected<SafeFD, int> result = open_file(relative_path, O_RDONLY);
+  
+  if (verbose) std::cerr << "Intentando abrir el archivo " << path << "\n";
+  std::expected<SafeFD, int> result = open_file(path, O_RDONLY);
   if (!result.has_value()) {
-    if (verbose) std::cerr << "Error al abrir el archivo " << relative_path << ": " << strerror(result.error()) << "\n";
+    if (verbose) std::cerr << "Error al abrir el archivo " << path << ": " << strerror(result.error()) << "\n";
     return std::unexpected(result.error());
   }
-  if (verbose) std::cerr << "Archivo " << relative_path << " abierto correctamente\n";
+  if (verbose) std::cerr << "Archivo " << path << " abierto correctamente\n";
   // Como hemos proibido las copias, tenemos que mover el SafeFD a una variable local
   SafeFD fd = std::move(result.value());
-  if (verbose) std::cerr << "Comprobando el descriptor de archivo de " << relative_path << " sea valido " << "\n";
+  if (verbose) std::cerr << "Comprobando el descriptor de archivo de " << path << " sea valido " << "\n";
   if (!fd.is_valid()) {
-    if (verbose) std::cerr << "El descriptor de archivo de " << relative_path << " no es valido\n";
+    if (verbose) std::cerr << "El descriptor de archivo de " << path << " no es valido\n";
     return std::unexpected(errno);
   }
 
-  if (verbose) std::cerr << "Obteniendo la longitud del archivo " << relative_path << "\n";
+  if (verbose) std::cerr << "Obteniendo la longitud del archivo " << path << "\n";
   long int length = lseek(fd.get_fd(), 0, SEEK_END);
 
-  if (verbose) std::cerr << "Intentando mapear el archivo " << relative_path << " en memoria\n";
+  if (verbose) std::cerr << "Intentando mapear el archivo " << path << " en memoria\n";
   void* mem = mmap(nullptr, static_cast<size_t>(length), PROT_READ, MAP_PRIVATE, fd.get_fd(), 0);
   if (mem == MAP_FAILED) {
-    if (verbose) std::cerr << "Error al mapear el archivo " << relative_path << ": " << strerror(errno) << "\n";
+    if (verbose) std::cerr << "Error al mapear el archivo " << path << ": " << strerror(errno) << "\n";
     return std::unexpected(errno);
   }
-  if (verbose) std::cerr << "Archivo " << relative_path << " mapeado correctamente\n";
+  if (verbose) std::cerr << "Archivo " << path << " mapeado correctamente\n";
   SafeMap map{static_cast<char*>(mem), static_cast<int>(length)};
   return map;
 }
@@ -170,8 +150,75 @@ std::expected<std::string, int> receive_request(const SafeFD& socket, size_t max
 }
 
 std::expected<std::string, execute_program_error> execute_program(const std::string& path, const exec_environment& env) {
-  
+    int pipe_fds[2]; // fds para la tubería
+    if (pipe(pipe_fds) == -1) {
+        return std::unexpected(execute_program_error{errno, "Error creating pipe: " + std::string(strerror(errno))});
+    }
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        // Error en fork
+        close(pipe_fds[0]);
+        close(pipe_fds[1]);
+        return std::unexpected(execute_program_error{errno, "Error in fork: " + std::string(strerror(errno))});
+    }
+
+    if (pid == 0) {
+        // Proceso hijo
+        close(pipe_fds[0]); // Cerramos el extremo de lectura
+
+        // Redirigir stdout a la tubería
+        if (dup2(pipe_fds[1], STDOUT_FILENO) == -1) {
+            _exit(EXIT_FAILURE);
+        }
+        close(pipe_fds[1]); // Cerramos el extremo de escritura redundante
+
+        // Configurar variables de entorno
+        setenv("REQUEST_PATH", env.request_path.c_str(), 1);
+        setenv("SERVER_BASEDIR", env.server_basedir.c_str(), 1);
+        setenv("REMOTE_PORT", env.remote_port.c_str(), 1);
+        setenv("REMOTE_IP", env.remote_ip.c_str(), 1);
+
+        // Ejecutar el programa
+        execl(path.c_str(), path.c_str(), nullptr);
+        // Si exec falla
+        _exit(EXIT_FAILURE);
+    }
+
+    // Proceso padre
+    close(pipe_fds[1]); // Cerramos el extremo de escritura
+
+    std::string output;
+    char buffer[1024];
+    ssize_t bytes_read;
+
+    while ((bytes_read = read(pipe_fds[0], buffer, sizeof(buffer))) > 0) {
+        output.append(buffer, static_cast<std::string::size_type>(bytes_read));
+    }
+
+    if (bytes_read == -1) {
+        close(pipe_fds[0]);
+        return std::unexpected(execute_program_error{errno, "Error reading from pipe: " + std::string(strerror(errno))});
+    }
+    close(pipe_fds[0]);
+
+    // Esperar a que el proceso hijo termine
+    int status;
+    if (waitpid(pid, &status, 0) == -1) {
+        return std::unexpected(execute_program_error{errno, "Error waiting for child process: " + std::string(strerror(errno))});
+    }
+
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        return std::unexpected(execute_program_error{
+            WEXITSTATUS(status),
+            "Child process did not exit successfully. Exit code: " + std::to_string(WEXITSTATUS(status))
+        });
+    }
+
+    return output;
 }
+
+
 
 
 
@@ -185,6 +232,13 @@ int send_response(const SafeFD& socket, std::string_view header, std::string_vie
   return 0;
 }
 
+void comprobar_send_response(int result_send) {
+  if (result_send == ECONNRESET) {
+    std::cerr << "Error leve al enviar la respuesta: " << strerror(result_send) << "\n";
+  } else if (result_send != 0) {
+    std::cerr << "Error fatal al enviar la respuesta: " << strerror(result_send) << "\n";
+  }
+}
 
 std::string getenv(const std::string& name) {
   char* value = std::getenv(name.c_str());

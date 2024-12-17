@@ -75,25 +75,13 @@ int main (int argc, char* argv[]) {
     if (petition != "GET") {
       header = "400 Bad request";
       int result = send_response(client_fd, header, body);
-      if (result == ECONNRESET) {
-        std::cerr << "Error leve al enviar la respuesta: " << strerror(result) << "\n";
-        continue;
-      } else if (result != 0) {
-        std::cerr << "Error fatal al enviar la respuesta: " << strerror(result) << "\n";
-        return EXIT_FAILURE;
-      }
+      comprobar_send_response(result);
       continue;
     }
     if (!options.value().base_path.starts_with("/") ) {
       header = "407 Bad route";
       int result = send_response(client_fd, header, body);
-      if (result == ECONNRESET) {
-        std::cerr << "Error leve al enviar la respuesta: " << strerror(result) << "\n";
-        continue;
-      } else if (result != 0) {
-        std::cerr << "Error fatal al enviar la respuesta: " << strerror(result) << "\n";
-        return EXIT_FAILURE;
-      }
+      comprobar_send_response(result);
       continue;
     }
 
@@ -102,9 +90,15 @@ int main (int argc, char* argv[]) {
     auto file_content = read_all(file, options.value());
     if (!file_content.has_value()) {
       if (file_content.error() == EACCES || file_content.error() == ENOENT) {
+        header = (file_content.error() == EACCES) ? "403 Forbidden" : "404 Not found";
         std::cerr << "Error leve al leer el archivo: " << strerror(file_content.error()) << "\n";
+        int result = send_response(client_fd, header, body);
+        comprobar_send_response(result);
         continue;
       } else {
+        header = "500 Internal server error";
+        int result = send_response(client_fd, header, body);
+        comprobar_send_response(result);
         std::cerr << "Error fatal al leer el archivo: " << strerror(file_content.error()) << "\n";
         return EXIT_FAILURE;
       }
@@ -115,13 +109,7 @@ int main (int argc, char* argv[]) {
     oss << "Content-Length: " << body.size() << '\n';
     header = oss.str();
     int result_send = send_response(client_fd, header, body);
-    if (result_send == ECONNRESET) {
-      std::cerr << "Error leve al enviar la respuesta: " << strerror(result_send) << "\n";
-      continue;
-    } else if (result_send != 0) {
-      std::cerr << "Error fatal al enviar la respuesta: " << strerror(result_send) << "\n";
-      return EXIT_FAILURE;
-    }
+    comprobar_send_response(result_send);
     // Cerramos la conexión, SafeFD se encarga de cerrar el descriptor
   }
   return EXIT_SUCCESS;

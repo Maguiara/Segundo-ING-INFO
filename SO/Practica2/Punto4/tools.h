@@ -22,6 +22,7 @@
 #include <cstdint>      // Para uint16_t
 #include <limits.h>    // Para PATH_MAX
 #include <map>          // Para std::map
+#include <sys/wait.h>   // Para waitpid
 #include "SafeFD.h"     // Para fd mas seguro
 #include "SafeMap.h"    // Para mapear archivos
 
@@ -45,12 +46,13 @@ struct OpcionesAdmitidas {
   bool show_help_flag = false;
   bool verbose_flag = false;
   bool port_flag = false;
+  bool base_path_flag = false;
   // Argumentos
   // Ya no hace falta obligar a que haya un archivo
   std::string filename;
   std::vector<std::string> aditional_arguments;
   int port = 8080;
-  std::string base_path = "/home/usuario";
+  std::string base_path = "/home/usuario/Segundo-ING-INFO/SO/Practica2/";
 };
 
 struct execute_program_error {
@@ -80,5 +82,6 @@ std::expected<std::string, execute_program_error> execute_program(const std::str
 
 
 int send_response(const SafeFD& socket, std::string_view header, std::string_view body);
+void comprobar_send_response(int result_send);
 
 std::string getenv(const std::string& name);

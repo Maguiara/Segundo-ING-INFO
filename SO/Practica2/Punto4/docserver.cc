@@ -75,31 +75,36 @@ int main (int argc, char* argv[]) {
     if (petition != "GET") {
       header = "400 Bad request";
       int result = send_response(client_fd, header, body);
-      if (result == ECONNRESET) {
-        std::cerr << "Error leve al enviar la respuesta: " << strerror(result) << "\n";
-        continue;
-      } else if (result != 0) {
-        std::cerr << "Error fatal al enviar la respuesta: " << strerror(result) << "\n";
-        return EXIT_FAILURE;
-      }
+      comprobar_send_response(result);
       continue;
     }
-    if (!path.starts_with("/") ) {
+    if (!options.value().base_path.starts_with("/")) {
       header = "407 Bad route";
       int result = send_response(client_fd, header, body);
-      if (result == ECONNRESET) {
-        std::cerr << "Error leve al enviar la respuesta: " << strerror(result) << "\n";
-        continue;
-      } else if (result != 0) {
-        std::cerr << "Error fatal al enviar la respuesta: " << strerror(result) << "\n";
-        return EXIT_FAILURE;
-      }
+      comprobar_send_response(result);
       continue;
     }
 
-    if (client_path.starts_with("/bin/")) {
+    if (client_path.starts_with("bin/")) {
+      // Setteamos las variables de entorno para ejecutar el programa
       exec_environment env;
+      env.request_path = options.value().base_path + client_path;
+      env.server_basedir = options.value().base_path;
+      env.remote_port = std::to_string(options.value().port);
+      env.remote_ip = inet_ntoa(client_addr.sin_addr);
+      // Ejecutamos el programa
       auto result_execute = execute_program(client_path, env);
+      if (!result_execute.has_value()) {
+        // Procesamos los posibles errores leves o errores fatales
+        continue;
+      }
+      body = result_execute.value();
+      std::ostringstream oss;
+      oss << "Content-Length: " << body.size() << '\n';
+      header = oss.str();
+      int result_send = send_response(client_fd, header, body);
+      comprobar_send_response(result_send);
+
 
     } else {
       auto file = options.value().base_path + client_path;
@@ -119,13 +124,7 @@ int main (int argc, char* argv[]) {
       oss << "Content-Length: " << body.size() << '\n';
       header = oss.str();
       int result_send = send_response(client_fd, header, body);
-      if (result_send == ECONNRESET) {
-        std::cerr << "Error leve al enviar la respuesta: " << strerror(result_send) << "\n";
-        continue;
-      } else if (result_send != 0) {
-        std::cerr << "Error fatal al enviar la respuesta: " << strerror(result_send) << "\n";
-        return EXIT_FAILURE;
-      }
+      comprobar_send_response(result_send);
     }
   }
 }

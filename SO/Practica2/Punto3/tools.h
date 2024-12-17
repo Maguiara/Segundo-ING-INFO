@@ -69,5 +69,6 @@ std::expected<std::string, int> receive_request(const SafeFD& socket, size_t max
 
 
 int send_response(const SafeFD& socket, std::string_view header, std::string_view body);
+void comprobar_send_response(int result_send);
 
 std::string getenv(const std::string& name);

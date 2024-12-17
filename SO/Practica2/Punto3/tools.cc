@@ -43,7 +43,11 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
       return std::unexpected(ErrorCode::UNKNOWN_OPTION);
     }
   }
-
+  //Comprobaciones de que existan las variables de entorno
+  if (!options.port_flag) {
+    const char* env_port = std::getenv("DOCSERVER_PORT");
+    if (env_port != nullptr) options.port = std::stoi(std::string(env_port));
+  }
   if (!options.base_path_flag) {
     const char* env_base_path = std::getenv("DOCSERVER_BASEDIR");
     if (env_base_path != nullptr) options.base_path = std::string(env_base_path);
@@ -55,7 +59,6 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
 
 
 std::expected<SafeMap, int> read_all(const std::string& path, const OpcionesAdmitidas& options) {
-  
 
   if (options.verbose_flag) std::cerr << "Intentando abrir el archivo " << path << "\n";
   std::expected<SafeFD, int> result = open_file(path, O_RDONLY);
@@ -163,7 +166,18 @@ int send_response(const SafeFD& socket, std::string_view header, std::string_vie
   if (bytes_sent < 0) {
     return errno;
   }
+  if (bytes_sent != static_cast<ssize_t>(response.size())) {
+    return EIO; // Input/output error if not all bytes are sent
+  }
   return 0;
+}
+
+void comprobar_send_response(int result_send) {
+  if (result_send == ECONNRESET) {
+    std::cerr << "Error leve al enviar la respuesta: " << strerror(result_send) << "\n";
+  } else if (result_send != 0) {
+    std::cerr << "Error fatal al enviar la respuesta: " << strerror(result_send) << "\n";
+  }
 }
 
 
