@@ -84,7 +84,7 @@ int main (int argc, char* argv[]) {
       }
       continue;
     }
-    if (!path.starts_with("/") ) {
+    if (!options.value().base_path.starts_with("/") ) {
       header = "407 Bad route";
       int result = send_response(client_fd, header, body);
       if (result == ECONNRESET) {

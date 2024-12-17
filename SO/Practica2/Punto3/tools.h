@@ -51,7 +51,7 @@ struct OpcionesAdmitidas {
   std::string filename;
   std::vector<std::string> aditional_arguments;
   int port = 8080;
-  std::string base_path = "/home/usuario";
+  std::string base_path = "/home/usuario/";
   int valor;
 };
 

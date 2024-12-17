@@ -170,54 +170,7 @@ std::expected<std::string, int> receive_request(const SafeFD& socket, size_t max
 }
 
 std::expected<std::string, execute_program_error> execute_program(const std::string& path, const exec_environment& env) {
-  if (access(path.c_str(), X_OK) != 0) {
-    // Salir con codigo de error y mensaje de error
-    return std::unexpected(execute_program_error{errno, std::string(strerror(errno))});
-  }
-
-  int pipefd[2];
-  if (pipe(pipefd) == -1) {
-    return std::unexpected(execute_program_error{errno, std::string(strerror(errno))});
-  }
-
-  pid_t pid = fork();
-  if (pid == -1) {
-    return std::unexpected(execute_program_error{errno, std::string(strerror(errno))});
-  }
-
-  if (pid == 0) { // Child process
-    close(pipefd[0]); // Close unused read end
-    dup2(pipefd[1], STDOUT_FILENO); // Redirect stdout to pipe
-    close(pipefd[1]);
-
-    setenv("REQUEST_PATH", env.request_path.c_str(), 1);
-    setenv("SERVER_BASEDIR", env.server_basedir.c_str(), 1);
-    setenv("REMOTE_PORT", env.remote_port.c_str(), 1);
-    setenv("REMOTE_IP", env.remote_ip.c_str(), 1);
-
-    execl(path.c_str(), path.c_str(), nullptr);
-    _exit(127); // If exec fails, exit with code 127
-
-  } else { // Parent process
-    close(pipefd[1]); // Close unused write end
-    std::string output;
-    char buffer[128];
-    ssize_t bytes_read;
-
-    while ((bytes_read = read(pipefd[0], buffer, sizeof(buffer))) > 0) {
-      output.append(buffer, bytes_read);
-    }
-
-    close(pipefd[0]);
-
-    int status;
-    waitpid(pid, &status, 0);
-    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
-      return output;
-    } else {
-      return std::unexpected(execute_program_error{WEXITSTATUS(status), "Error al ejecutar el programa (proceso hijo)"});
-    }
-  }
+  
 }
 
 

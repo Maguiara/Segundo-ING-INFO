@@ -46,16 +46,7 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
 
   if (!options.base_path_flag) {
     const char* env_base_path = std::getenv("DOCSERVER_BASEDIR");
-    if (env_base_path) {
-      options.base_path = std::string(env_base_path);
-    } else {
-      char cwd[PATH_MAX];
-      if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-        options.base_path = std::string(cwd);
-      } else {
-        return std::unexpected(ErrorCode::MISSING_ARGUMENTS);
-      }
-    }
+    if (env_base_path != nullptr) options.base_path = std::string(env_base_path);
   }
 
   return options;
@@ -64,54 +55,37 @@ std::expected<OpcionesAdmitidas, ErrorCode> parse_args(int argc, char* argv[]) {
 
 
 std::expected<SafeMap, int> read_all(const std::string& path, const OpcionesAdmitidas& options) {
-  std::string relative_path = path;
-  if (path.starts_with("/")) {
-    if (options.verbose_flag) std::cerr << "Transformando la ruta absoluta " << path << " en ruta relativa\n";
-    // PATH MAX es una constante que indica el tamaño maximo de una ruta en el sistema
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) != nullptr) {
-      std::string current_dir(cwd);
-      if (path.find(current_dir) == 0) {
-        relative_path = path.substr(current_dir.length() + 1);
-      } else {
-        if (options.verbose_flag) std::cerr << "La ruta absoluta no contiene el directorio actual\n";
-        return std::unexpected(errno);
-      }
-    } else {
-      if (options.verbose_flag) std::cerr << "Error obteniendo el directorio actual\n";
-      return std::unexpected(errno);
-    }
-  }
+  
 
-  if (options.verbose_flag) std::cerr << "Intentando abrir el archivo " << relative_path << "\n";
-  std::expected<SafeFD, int> result = open_file(relative_path, O_RDONLY);
+  if (options.verbose_flag) std::cerr << "Intentando abrir el archivo " << path << "\n";
+  std::expected<SafeFD, int> result = open_file(path, O_RDONLY);
   if (!result.has_value()) {
-    if (options.verbose_flag) std::cerr << "Error al abrir el archivo " << relative_path << ": " << strerror(result.error()) << "\n";
+    if (options.verbose_flag) std::cerr << "Error al abrir el archivo " << path << ": " << strerror(result.error()) << "\n";
     return std::unexpected(result.error());
   }
-  if (options.verbose_flag) std::cerr << "Archivo " << relative_path << " abierto correctamente\n";
+  if (options.verbose_flag) std::cerr << "Archivo " << path << " abierto correctamente\n";
   // Como hemos proibido las copias, tenemos que mover el SafeFD a una variable local
   SafeFD fd = std::move(result.value());
-  if (options.verbose_flag) std::cerr << "Comprobando el descriptor de archivo de " << relative_path << " sea valido " << "\n";
+  if (options.verbose_flag) std::cerr << "Comprobando el descriptor de archivo de " << path << " sea valido " << "\n";
   if (!fd.is_valid()) {
-    if (options.verbose_flag) std::cerr << "El descriptor de archivo de " << relative_path << " no es valido\n";
+    if (options.verbose_flag) std::cerr << "El descriptor de archivo de " << path << " no es valido\n";
     return std::unexpected(errno);
   }
 
-  if (options.verbose_flag) std::cerr << "Obteniendo la longitud del archivo " << relative_path << "\n";
+  if (options.verbose_flag) std::cerr << "Obteniendo la longitud del archivo " << path << "\n";
   long int length = lseek(fd.get_fd(), 0, SEEK_END);
   if (options.valor_flag) {
     length = options.valor;
   }
 
-  if (options.verbose_flag) std::cerr << "Intentando mapear el archivo " << relative_path << " en memoria\n";
+  if (options.verbose_flag) std::cerr << "Intentando mapear el archivo " << path << " en memoria\n";
   void* mem = mmap(nullptr, static_cast<size_t>(length), PROT_READ, MAP_PRIVATE, fd.get_fd(), 0);
   if (mem == MAP_FAILED) {
-    if (options.verbose_flag) std::cerr << "Error al mapear el archivo " << relative_path << ": " << strerror(errno) << "\n";
+    if (options.verbose_flag) std::cerr << "Error al mapear el archivo " << path << ": " << strerror(errno) << "\n";
     return std::unexpected(errno);
   }
 
-  if (options.verbose_flag) std::cerr << "Archivo " << relative_path << " mapeado correctamente\n";
+  if (options.verbose_flag) std::cerr << "Archivo " << path << " mapeado correctamente\n";
   SafeMap map{static_cast<char*>(mem), static_cast<int>(length)};
   return map;
 }

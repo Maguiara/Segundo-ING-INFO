@@ -71,7 +71,7 @@ int main (int argc, char* argv[]) {
     std::istringstream iss(request.value());
     std::string petition, client_path, header;
     std::string_view body;
-    iss >> petition >> path;
+    iss >> petition >> client_path;
     if (petition != "GET") {
       header = "400 Bad request";
       int result = send_response(client_fd, header, body);
@@ -98,8 +98,7 @@ int main (int argc, char* argv[]) {
     }
 
     if (client_path.starts_with("/bin/")) {
-      
-
+      exec_environment env;
       auto result_execute = execute_program(client_path, env);
 
     } else {
