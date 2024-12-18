@@ -78,7 +78,7 @@ std::expected<SafeFD, int> make_socket(uint16_t port, const bool verbose);
 int listen_connection(const SafeFD& socket, const bool verbose);
 std::expected<SafeFD, int> accept_connection(const SafeFD& socket, sockaddr_in& client_addr, const bool verbose);
 std::expected<std::string, int> receive_request(const SafeFD& socket, size_t max_size, const bool verbose);
-std::expected<std::string, execute_program_error> execute_program(const std::string& path, const exec_environment& env);
+std::expected<std::string, execute_program_error> execute_program(const std::string& path, const exec_environment& env, const bool verbose);
 
 
 int send_response(const SafeFD& socket, std::string_view header, std::string_view body);

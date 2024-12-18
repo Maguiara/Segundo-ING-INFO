@@ -149,12 +149,19 @@ std::expected<std::string, int> receive_request(const SafeFD& socket, size_t max
   return buffer;
 }
 
-std::expected<std::string, execute_program_error> execute_program(const std::string& path, const exec_environment& env) {
+std::expected<std::string, execute_program_error> execute_program(const std::string& path, const exec_environment& env, const bool verbose) {
+    // Comprobamos que exista el programa
+    if (access(path.c_str(), X_OK) == -1) {
+        return std::unexpected(execute_program_error{errno, "Error accessing program: " + std::string(strerror(errno))});
+    }
+    if (verbose) std::cerr << "Creando las tuberias de escritura y lectura \n";
+    //creamos las tuberías
     int pipe_fds[2]; // fds para la tubería
     if (pipe(pipe_fds) == -1) {
         return std::unexpected(execute_program_error{errno, "Error creating pipe: " + std::string(strerror(errno))});
     }
 
+    //Creamos el proceso hijo
     pid_t pid = fork();
     if (pid == -1) {
         // Error en fork
@@ -163,26 +170,29 @@ std::expected<std::string, execute_program_error> execute_program(const std::str
         return std::unexpected(execute_program_error{errno, "Error in fork: " + std::string(strerror(errno))});
     }
 
+
     if (pid == 0) {
         // Proceso hijo
         close(pipe_fds[0]); // Cerramos el extremo de lectura
 
         // Redirigir stdout a la tubería
         if (dup2(pipe_fds[1], STDOUT_FILENO) == -1) {
-            _exit(EXIT_FAILURE);
+          return std::unexpected(execute_program_error{errno, "Error in fork: " + std::string(strerror(errno))});
         }
         close(pipe_fds[1]); // Cerramos el extremo de escritura redundante
 
         // Configurar variables de entorno
+        if (verbose) std::cerr << "Configurando las variables de entorno\n";
         setenv("REQUEST_PATH", env.request_path.c_str(), 1);
         setenv("SERVER_BASEDIR", env.server_basedir.c_str(), 1);
         setenv("REMOTE_PORT", env.remote_port.c_str(), 1);
         setenv("REMOTE_IP", env.remote_ip.c_str(), 1);
 
         // Ejecutar el programa
+        if (verbose) std::cerr << "Ejecutando el programa\n";
         execl(path.c_str(), path.c_str(), nullptr);
         // Si exec falla
-        _exit(EXIT_FAILURE);
+        exit(127);
     }
 
     // Proceso padre
@@ -191,7 +201,7 @@ std::expected<std::string, execute_program_error> execute_program(const std::str
     std::string output;
     char buffer[1024];
     ssize_t bytes_read;
-
+    if (verbose) std::cerr << "Leyendo la salida del programa\n";
     while ((bytes_read = read(pipe_fds[0], buffer, sizeof(buffer))) > 0) {
         output.append(buffer, static_cast<std::string::size_type>(bytes_read));
     }
@@ -200,21 +210,25 @@ std::expected<std::string, execute_program_error> execute_program(const std::str
         close(pipe_fds[0]);
         return std::unexpected(execute_program_error{errno, "Error reading from pipe: " + std::string(strerror(errno))});
     }
+    //Cerrar el extremo de lectura
     close(pipe_fds[0]);
 
     // Esperar a que el proceso hijo termine
+    if (verbose) std::cerr << "Esperando a que el programa termine\n";
     int status;
     if (waitpid(pid, &status, 0) == -1) {
         return std::unexpected(execute_program_error{errno, "Error waiting for child process: " + std::string(strerror(errno))});
     }
 
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-        return std::unexpected(execute_program_error{
-            WEXITSTATUS(status),
-            "Child process did not exit successfully. Exit code: " + std::to_string(WEXITSTATUS(status))
-        });
+    if (WIFEXITED(status)) {
+      int exit_code = WEXITSTATUS(status);
+      if (exit_code != 0) {
+        return std::unexpected(execute_program_error{exit_code, "Program exited with code " + std::to_string(exit_code)});
+      }
+    } else {
+      return std::unexpected(execute_program_error{errno, "Child process did not exit normally"});   
     }
-
+    if (verbose) std::cerr << "Programa terminado correctamente\n";
     return output;
 }
 

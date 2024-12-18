@@ -2,5 +2,5 @@
 
 
 echo 
-echo "Pedazo de puto"
+echo "Hola mundo"
 echo 

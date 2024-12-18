@@ -85,17 +85,38 @@ int main (int argc, char* argv[]) {
       continue;
     }
 
-    if (client_path.starts_with("bin/")) {
+    if (client_path.starts_with("bin/") || client_path.starts_with("/bin")) {
+      if (client_path.starts_with("/bin")) client_path.erase(0, 1);
       // Setteamos las variables de entorno para ejecutar el programa
       exec_environment env;
       env.request_path = options.value().base_path + client_path;
+      std::cerr << "Path del usuario: " << client_path << std::endl;
       env.server_basedir = options.value().base_path;
       env.remote_port = std::to_string(options.value().port);
       env.remote_ip = inet_ntoa(client_addr.sin_addr);
       // Ejecutamos el programa
-      auto result_execute = execute_program(client_path, env);
+      auto result_execute = execute_program(client_path, env, options.value().verbose_flag);
       if (!result_execute.has_value()) {
-        // Procesamos los posibles errores leves o errores fatales
+        //Procesamos errores leves y fatales
+        if (result_execute.error().exit_code == EACCES || result_execute.error().exit_code == ENOENT) {
+          std::cerr << "Error leve al ejecutar el programa: " << result_execute.error().error_message << "\n";
+          header = (result_execute.error().exit_code == EACCES) ? "403 Forbidden" : "404 Not found";
+          int result = send_response(client_fd, header, body);
+          comprobar_send_response(result);
+          continue;
+        } else if (result_execute.error().exit_code == 127) {
+          std::cerr << "Error leve al ejecutar el programa: " << result_execute.error().error_message << "\n";
+          header = "501 Other error";
+          int result = send_response(client_fd, header, body);
+          comprobar_send_response(result);
+          continue;
+        } else {
+          std::cerr << "Error fatal al ejecutar el programa: " << result_execute.error().error_message << "\n";
+          header = "500 Internal server error";
+          int result = send_response(client_fd, header, body);
+          comprobar_send_response(result);
+          return EXIT_FAILURE;
+        }
         continue;
       }
       body = result_execute.value();
@@ -104,17 +125,21 @@ int main (int argc, char* argv[]) {
       header = oss.str();
       int result_send = send_response(client_fd, header, body);
       comprobar_send_response(result_send);
-
-
     } else {
       auto file = options.value().base_path + client_path;
       auto file_content = read_all(file, options.value().verbose_flag);
       if (!file_content.has_value()) {
         if (file_content.error() == EACCES || file_content.error() == ENOENT) {
           std::cerr << "Error leve al leer el archivo: " << strerror(file_content.error()) << "\n";
+          header = (file_content.error() == EACCES) ? "403 Forbidden" : "404 Not found";
+          int result = send_response(client_fd, header, body);
+          comprobar_send_response(result);
           continue;
         } else {
           std::cerr << "Error fatal al leer el archivo: " << strerror(file_content.error()) << "\n";
+          header = "500 Internal server error";
+          int result = send_response(client_fd, header, body);
+          comprobar_send_response(result);
           return EXIT_FAILURE;
         }
       }
