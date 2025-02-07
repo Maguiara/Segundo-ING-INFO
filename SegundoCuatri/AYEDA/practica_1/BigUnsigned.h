@@ -35,7 +35,7 @@ class BigUnsigned {
   BigUnsigned operator%(const BigUnsigned&) const;
 
  private: 
-  std::vector<unsigned char> digitios_;
+  std::vector<unsigned char> digitos_;
 }; 
 
 

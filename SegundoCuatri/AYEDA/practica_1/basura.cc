@@ -4,17 +4,14 @@
 
 int main () {
 
-unsigned int input;
-std::vector<unsigned int> vec;
+  int numero = 1234;
+  std::vector<int> digitos;
+  while (numero > 0) {
+    digitos.push_back(numero % 10);
+    numero /= 10;
+  }
 
-std::cout << "Introduce un unsigned char: ";
-std::cin >> input;
-
-vec.push_back(input);
-
-std::cout << "El vector contiene: ";
-for (unsigned int& c : vec) {
-    std::cout << c << " ";
-}
-std::cout << std::endl;
+  for (int i : digitos) {
+    std::cout << i << " ";
+  }
 }
