@@ -16,6 +16,8 @@ int main () {
   }
 }
 
+
+/**  
 function ggit() {
     # Verificar si se proporcionó un mensaje de commit
     if [[ -z "${1}" ]]; then
@@ -71,3 +73,4 @@ function ggit() {
     echo -e "- Rama actual: $(git branch --show-current)"
     echo -e "- Último commit: $(git log -1 --pretty=format:'%h - %s')\n"
 }
+*/
