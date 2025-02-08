@@ -7,7 +7,7 @@ class BigUnsigned {
  public:
   //Constructores
   BigUnsigned(unsigned n = 0);
-  BigUnsigned(const unsigned char* );
+  BigUnsigned(const unsigned char*);
   BigUnsigned(const BigUnsigned&); // Constructor de copia
 
   //Asignacion

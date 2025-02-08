@@ -1,10 +1,10 @@
 
 
-#include "tools.h"
-#include "BigUnsigned.h"
+#include "BigInteger.h"
 
 
 int main () {
+  // Pruebas de la clase BigUnsigned
   unsigned numero = 10;
   BigUnsigned bu(numero);
   BigUnsigned bu2 = bu;
@@ -42,4 +42,15 @@ int main () {
   std::cout << "La division de " << bu << " y " << bu3 << " es: " << div << std::endl;
   BigUnsigned mod = bu % bu3;
   std::cout << "El modulo de " << bu << " y " << bu3 << " es: " << mod << std::endl;
+
+  // Pruebas de la clase BigInteger
+  int numero2 = -10;
+  BigInteger bi(numero2);
+  BigInteger bi2 = bi;
+  BigInteger bi3;
+  std::cout << "Introduce un numero (con signo): ";
+  std::cin >> bi3;
+  std::cout << "El numero es: " << bi << std::endl;
+  std::cout << "El numero copiado es: " << bi2 << std::endl;
+  std::cout << "El numero introducido es: " << bi3 << std::endl;
 }

@@ -1,15 +1,15 @@
 #ifndef BIGINTEGER_H
 #define BIGINTEGER_H
 
-#include "tools.h"
 #include "BigUnsigned.h"
+#include "tools.h"
 
 class BigInteger {
  public:
   
   //Constructores
   BigInteger(int n = 0);
-  BigInteger(const unsigned char* );
+  BigInteger(const unsigned char*);
   BigInteger(const BigInteger&); // Constructor de copia
   BigInteger(const BigUnsigned&); //Constructor de cambio de tipo
 
@@ -39,7 +39,9 @@ class BigInteger {
   BigInteger operator%(const BigInteger&) const;
 
  private: 
-  std::vector<unsigned char> digitios_;
+  BigUnsigned numero_;
+  bool signo_;
+
 }; 
 
 #endif

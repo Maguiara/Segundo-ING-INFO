@@ -1,4 +1,5 @@
 #include "BigUnsigned.h"
+#include <cstring> 
 
 
 // Constructores de la clase
@@ -14,8 +15,9 @@ BigUnsigned::BigUnsigned(unsigned n) {
 
 // Hay que arreglar este constructor
 BigUnsigned::BigUnsigned(const unsigned char* str) {
-  for (int i = 0; str[i] != '\0'; i++) {
-    digitos_.push_back(str[i]); 
+  int len = strlen(reinterpret_cast<const char*>(str));
+  for (int i = len - 1; i >= 0; i--) {
+    digitos_.push_back(str[i]);
   }
 }
 
@@ -109,7 +111,8 @@ BigUnsigned BigUnsigned::operator--(int) {
 
 // Operador de la suma
 BigUnsigned operator+(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-  std::string totalSum;
+  BigUnsigned totalSum;
+  totalSum.digitos_.clear();
   int carry = 0;
   int i = 0;
   while (i < bu1.digitos_.size() || i < bu2.digitos_.size() || carry > 0) {
@@ -120,11 +123,11 @@ BigUnsigned operator+(const BigUnsigned& bu1, const BigUnsigned& bu2) {
     if (i < bu2.digitos_.size()) {
       suma += bu2.digitos_[i] - '0';
     }
-    totalSum.push_back(suma % 10 + '0');
+    totalSum.digitos_.push_back((suma % 10) + '0');
     carry = suma / 10;
     i++;
   }
-  return BigUnsigned((unsigned char*)totalSum.c_str());
+  return totalSum;
 }
 
 // Operador de la resta
