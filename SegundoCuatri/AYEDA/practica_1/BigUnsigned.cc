@@ -155,14 +155,13 @@ BigUnsigned BigUnsigned::operator-(const BigUnsigned& other) const {
 // Operador de la multiplicación
 
 BigUnsigned BigUnsigned::operator*(const BigUnsigned& other) const {
-  BigUnsigned res, zero;
-
+  BigUnsigned zero;
   if (*this == zero|| other == zero) return zero; // Caso de que alguno de los dos sea 0
 
   BigUnsigned smaller = *this < other ? *this : other;
   BigUnsigned larger = *this < other ? other : *this;
-  BigUnsigned iterador; // Empieza en 0, 
-  while (iterador < smaller) { // Por lo que esto hara las iteraciones necesarias
+  BigUnsigned res, iterador; // Empieza en 0, 
+  while (!(iterador == smaller)) { // Por lo que esto hara las iteraciones necesarias por que llegaria smaller - 1
     res = res + larger;
     ++iterador;
   }
@@ -172,14 +171,15 @@ BigUnsigned BigUnsigned::operator*(const BigUnsigned& other) const {
 // Operador de la división
 
 BigUnsigned operator/(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-  BigUnsigned res, zero;
+  BigUnsigned zero;
 
   if (bu2 == zero) return zero; // Caso de que el divisor sea 0
   if (bu1 < bu2) return zero; // Caso de que el dividendo sea menor que el divisor
 
-  BigUnsigned  temp = bu1;
-  BigUnsigned  temp2 = bu2;
-  while (temp2 <  temp || temp2 ==  temp) {
+  BigUnsigned temp = bu1;
+  BigUnsigned temp2 = bu2;
+  BigUnsigned res;
+  while (temp2 < temp || temp2 ==  temp) {
     temp = (temp - temp2);
     res++;
   }

@@ -5,7 +5,10 @@
 
 int main () {
   // Pruebas de la clase BigUnsigned
-  unsigned numero = 670315190;
+  unsigned char numero [] = "80";
+  // ------------------------------------
+  
+  // ------------------------------------
   BigUnsigned bu(numero);
   BigUnsigned bu2 = bu;
   BigUnsigned bu3;
@@ -48,7 +51,7 @@ int main () {
   std::cout << "El modulo de " << bu << " y " << bu3 << " es: " << mod << std::endl;
 
   // Pruebas de la clase BigInteger
-  int numero2 = -10;
+  int numero2 = 10;
   BigInteger bi(numero2);
   BigInteger bi2 = bi;
   BigInteger bi3;
@@ -57,4 +60,32 @@ int main () {
   std::cout << "El numero es: " << bi << std::endl;
   std::cout << "El numero copiado es: " << bi2 << std::endl;
   std::cout << "El numero introducido es: " << bi3 << std::endl;
+
+  //std::cout << "Los numeros " << bi << " y " << bi3 << " ";
+  //if (bi == bi3) std::cout << "son iguales" << std::endl;
+  //else std::cout << "no son iguales" << std::endl;
+  //if (bi < bi3) std::cout << "El numero " << bi << " es menor que " << bi3 << std::endl;
+  //else std::cout << "El numero " << bi << " es mayor que " << bi3 << std::endl;
+
+  ++bi;
+  std::cout << "Incrementado (pre): " << bi << std::endl;
+  bi++;
+  std::cout << "Incrementado (post): " << bi << std::endl;
+
+  --bi2;
+  std::cout << "Decrementado (pre): " << bi2 << std::endl;
+  bi2--;
+  std::cout << "Decrementado (post): " << bi2 << std::endl;
+
+  BigInteger suma2 = bi + bi3;
+  std::cout << "La suma de " << bi << " y " << bi3 << " es: " << suma2 << std::endl;
+  /** BigInteger resta2 = bi - bi3;
+  std::cout << "La resta de " << bi << " y " << bi3 << " es: " << resta2 << std::endl;
+  BigInteger mult2 = bi * bi3;
+  std::cout << "La multiplicacion de " << bi << " y " << bi3 << " es: " << mult2 << std::endl;
+  BigInteger div2 = bi / bi3;
+  std::cout << "La division de " << bi << " y " << bi3 << " es: " << div2 << std::endl;
+  BigInteger mod2 = bi % bi3;
+  std::cout << "El modulo de " << bi << " y " << bi3 << " es: " << mod2 << std::endl;
+  */
 }
