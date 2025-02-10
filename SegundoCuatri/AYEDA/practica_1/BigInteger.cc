@@ -5,13 +5,10 @@
 
 
 BigInteger::BigInteger(int n) {
-  if (n < 0) {
-    signo_ = true;
-    n = -n;
-  } else {
-    signo_ = false;
-  }
-  numero_ = BigUnsigned(n);
+  unsigned n_abs = abs(n);
+  if (n < 0) signo_ = true;
+  else signo_ = false;
+  numero_ = BigUnsigned(n_abs);
 }
 
 BigInteger::BigInteger(const unsigned char* n) {

@@ -17,6 +17,10 @@ BigUnsigned::BigUnsigned(unsigned n) {
 BigUnsigned::BigUnsigned(const unsigned char* str) {
   int len = strlen(reinterpret_cast<const char*>(str));
   for (int i = len - 1; i >= 0; i--) {
+    if (!isdigit(str[i])) {
+      std::cerr << "Error: el string no es un número" << std::endl;
+      return;
+    }
     digitos_.push_back(str[i]);
   }
 }
@@ -60,19 +64,14 @@ bool BigUnsigned::operator==(const BigUnsigned& other) const {
 }
 
 bool operator<(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-  if (bu1.digitos_.size() < bu2.digitos_.size()) {
-    return true;
-  }
-  if (bu1.digitos_.size() > bu2.digitos_.size()) {
-    return false;
-  }
-  if (bu1.digitos_ == bu2.digitos_) {
-    return false;
-  }
+  // Comparacion de tamaños
+  if (bu1.digitos_.size() < bu2.digitos_.size()) return true;
+  if (bu1.digitos_.size() > bu2.digitos_.size()) return false;
+  // Comparacion de digitos (si son iguales)
+  if (bu1.digitos_ == bu2.digitos_) return false;
+  // Comparacion de digitos )
   for (int i = bu1.digitos_.size() - 1; i >= 0; i--) {
-    if (bu1.digitos_[i] > bu2.digitos_[i]) {
-      return false;
-    }
+    if (bu1.digitos_[i] > bu2.digitos_[i]) return false;
   }
   return true;
 }
@@ -117,12 +116,8 @@ BigUnsigned operator+(const BigUnsigned& bu1, const BigUnsigned& bu2) {
   int i = 0;
   while (i < bu1.digitos_.size() || i < bu2.digitos_.size() || carry > 0) {
     int suma = carry;
-    if (i < bu1.digitos_.size()) {
-      suma += bu1.digitos_[i] - '0';
-    }
-    if (i < bu2.digitos_.size()) {
-      suma += bu2.digitos_[i] - '0';
-    }
+    if (i < bu1.digitos_.size()) suma += bu1.digitos_[i] - '0';
+    if (i < bu2.digitos_.size()) suma += bu2.digitos_[i] - '0';
     totalSum.digitos_.push_back((suma % 10) + '0');
     carry = suma / 10;
     i++;
@@ -136,17 +131,20 @@ BigUnsigned BigUnsigned::operator-(const BigUnsigned& other) const {
   if (*this < other) return res;
   res.digitos_.clear();
   int carry = 0;
-  for (int i = 0; i < digitos_.size(); i++) {
-    int diff = (digitos_[i] - '0') - (i < other.digitos_.size() ? (other.digitos_[i] - '0') : 0) + carry;
-    if (diff < 0) {
-      diff += 10;
+  int i = 0;
+  while (i < digitos_.size() || i < other.digitos_.size() || carry != 0) {
+    int resta = carry;
+    if (i < digitos_.size()) resta += digitos_[i] - '0';
+    if (i < other.digitos_.size()) resta -= other.digitos_[i] - '0';
+    if (resta < 0) {
+      resta += 10;
       carry = -1;
     } else {
       carry = 0;
     }
-    //std::cout << "diff: " << diff << std::endl; Debugear codigo
-    res.digitos_.push_back(diff + '0');
-  }
+    res.digitos_.push_back(resta + '0');
+    i++;
+  } 
   while (res.digitos_.size() > 1 && res.digitos_.back() == '0') {
     res.digitos_.pop_back();
   }
@@ -157,11 +155,16 @@ BigUnsigned BigUnsigned::operator-(const BigUnsigned& other) const {
 // Operador de la multiplicación
 
 BigUnsigned BigUnsigned::operator*(const BigUnsigned& other) const {
-  BigUnsigned res;
+  BigUnsigned res, zero;
+
+  if (*this == zero|| other == zero) return zero; // Caso de que alguno de los dos sea 0
+
   BigUnsigned smaller = *this < other ? *this : other;
   BigUnsigned larger = *this < other ? other : *this;
-  for (BigUnsigned i; i < smaller; ++i) {
+  BigUnsigned iterador; // Empieza en 0, 
+  while (iterador < smaller) { // Por lo que esto hara las iteraciones necesarias
     res = res + larger;
+    ++iterador;
   }
   return res;
 }
@@ -169,11 +172,16 @@ BigUnsigned BigUnsigned::operator*(const BigUnsigned& other) const {
 // Operador de la división
 
 BigUnsigned operator/(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-  BigUnsigned res;
-  BigUnsigned temp = bu1;
-  while (bu2 < temp || bu2 == temp) {
-    temp = temp - bu2;
-    res = res + 1;
+  BigUnsigned res, zero;
+
+  if (bu2 == zero) return zero; // Caso de que el divisor sea 0
+  if (bu1 < bu2) return zero; // Caso de que el dividendo sea menor que el divisor
+
+  BigUnsigned  temp = bu1;
+  BigUnsigned  temp2 = bu2;
+  while (temp2 <  temp || temp2 ==  temp) {
+    temp = (temp - temp2);
+    res++;
   }
   return res;
 }
@@ -181,10 +189,11 @@ BigUnsigned operator/(const BigUnsigned& bu1, const BigUnsigned& bu2) {
 // Operador del módulo
 
 BigUnsigned BigUnsigned::operator%(const BigUnsigned& other) const {
-  BigUnsigned res;
+  BigUnsigned res, zero;
+  if (other == zero) return zero; // Caso de que el divisor sea 0 
   BigUnsigned temp = *this;
   while (other < temp || other == temp) {
-    temp = temp - other;
+    temp = (temp - other);
   }
   return temp;
 }
