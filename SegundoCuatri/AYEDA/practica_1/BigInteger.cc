@@ -62,6 +62,19 @@ std::istream& operator>>(std::istream& is, BigInteger& bi) {
   return is;
 }
 
+// Operadores de comparacion
+bool BigInteger::operator==(const BigInteger& other) const {
+  return numero_ == other.numero_ && signo_ == other.signo_;
+}
+
+bool operator<(const BigInteger& bi1, const BigInteger& bi2) {
+  if (bi1.signo_ && !bi2.signo_) return true;
+  if (!bi1.signo_ && bi2.signo_) return false;
+  if (bi1.signo_ && bi2.signo_) return bi2.numero_ < bi1.numero_;
+  return bi1.numero_ < bi2.numero_;
+}
+
+
 // Operadores de incremento y decremento
 
 BigInteger& BigInteger::operator++() {
@@ -108,11 +121,70 @@ BigInteger operator+(const BigInteger& bi1, const BigInteger& bi2) {
     res.numero_ = bi1.numero_ + bi2.numero_;
     res.signo_ = bi1.signo_;
   } else {
+    // Caso 2: Los números tienen signos diferentes
     if (bi1.numero_ == bi2.numero_) {
       res.numero_ = zero;
       res.signo_ = false;
-    } else if 
-    
+    } else if (bi1.numero_ < bi2.numero_) {
+      res.numero_ = bi2.numero_ - bi1.numero_;
+      res.signo_ = bi2.signo_;
+    } else {
+      res.numero_ = bi1.numero_ - bi2.numero_;
+      res.signo_ = bi1.signo_;
+    }
   }
+  return res;
+}
+
+// La resta no esta declarda como friend
+BigInteger BigInteger::operator-(const BigInteger& other) const {
+  BigInteger res;
+  BigUnsigned zero;
+  // Caso 1: Los dos números tienen el mismo signo
+  if (signo_ == other.signo_) {
+    if (numero_ == other.numero_) {
+      res.numero_ = zero;
+      res.signo_ = false;
+    } else if (numero_ < other.numero_) {
+      res.numero_ = other.numero_ - numero_;
+      res.signo_ = other.signo_;
+    } else {
+      res.numero_ = numero_ - other.numero_;
+      res.signo_ = signo_;
+    }
+  } else {
+    // Caso 2: Los números tienen signos diferentes
+    res.numero_ = numero_ + other.numero_;
+    res.signo_ = signo_;
+  }
+  return res;
+}
+
+BigInteger BigInteger::operator*(const BigInteger& other) const {
+  BigInteger res;
+  BigUnsigned zero;
+  if (numero_ == zero || other.numero_ == zero) return res;
+  res.numero_ = numero_ * other.numero_;
+  if (signo_ == other.signo_) res.signo_ = false;
+  else res.signo_ = true;
+  return res;
+}
+
+BigInteger operator/(const BigInteger& bi1, const BigInteger& bi2) {
+  BigInteger res;
+  BigUnsigned zero;
+  if ( bi1.numero_ == zero || bi2.numero_ == zero) return res;
+  res.numero_ = bi1.numero_ / bi2.numero_;
+  if (bi1.signo_ == bi2.signo_) res.signo_ = false;
+  else res.signo_ = true;
+  return res;
+}
+
+BigInteger BigInteger::operator%(const BigInteger& other) const {
+  BigInteger res;
+  BigUnsigned zero;
+  if (numero_ == zero || other.numero_ == zero) return res;
+  res.numero_ = numero_ % other.numero_;
+  res.signo_ = false; // Añadir explicacion matetatica: 
   return res;
 }

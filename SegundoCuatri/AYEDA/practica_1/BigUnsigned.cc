@@ -64,16 +64,11 @@ bool BigUnsigned::operator==(const BigUnsigned& other) const {
 }
 
 bool operator<(const BigUnsigned& bu1, const BigUnsigned& bu2) {
-  // Comparacion de tamaños
-  if (bu1.digitos_.size() < bu2.digitos_.size()) return true;
-  if (bu1.digitos_.size() > bu2.digitos_.size()) return false;
-  // Comparacion de digitos (si son iguales)
-  if (bu1.digitos_ == bu2.digitos_) return false;
-  // Comparacion de digitos )
+  if (bu1.digitos_.size() != bu2.digitos_.size()) return bu1.digitos_.size() < bu2.digitos_.size();
   for (int i = bu1.digitos_.size() - 1; i >= 0; i--) {
-    if (bu1.digitos_[i] > bu2.digitos_[i]) return false;
+    if (bu1.digitos_[i] != bu2.digitos_[i]) return bu1.digitos_[i] < bu2.digitos_[i];
   }
-  return true;
+  return false;
 }
 
 // Operadores de incremento y decremento
@@ -164,6 +159,7 @@ BigUnsigned BigUnsigned::operator*(const BigUnsigned& other) const {
   while (!(iterador == smaller)) { // Por lo que esto hara las iteraciones necesarias por que llegaria smaller - 1
     res = res + larger;
     ++iterador;
+    std::cout << "Iteracion: " << iterador << ": " << res << std::endl;
   }
   return res;
 }
@@ -177,10 +173,9 @@ BigUnsigned operator/(const BigUnsigned& bu1, const BigUnsigned& bu2) {
   if (bu1 < bu2) return zero; // Caso de que el dividendo sea menor que el divisor
 
   BigUnsigned temp = bu1;
-  BigUnsigned temp2 = bu2;
   BigUnsigned res;
-  while (temp2 < temp || temp2 ==  temp) {
-    temp = (temp - temp2);
+  while (bu2 < temp || bu2 == temp) {
+    temp = (temp - bu2);
     res++;
   }
   return res;
