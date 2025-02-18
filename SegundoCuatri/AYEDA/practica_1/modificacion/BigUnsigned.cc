@@ -189,6 +189,5 @@ BigUnsigned BigUnsigned::operator%(const BigUnsigned& other) const {
     contador++;
   }
   contadorAcumulado_ += contador;
-  std::cout << "Numero de restas en el operador modulo " << contador << std::endl;
   return temp;
 }
